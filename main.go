@@ -44,12 +44,32 @@ func NewGenesisBlock() *Block {
 	return NewBlock("Genesis Block", []byte("0"))
 }
 
-func main() {
-	gb := NewGenesisBlock()
-	b1 := NewBlock("Send 1 BTC to Ivan", gb.hash)
+// Blockchain keeps a sequence of Blocks
+type Blockchain struct {
+	blocks []*Block
+}
 
-	fmt.Printf("%s\n", gb.Data)
-	fmt.Printf("%x\n", gb.hash)
-	fmt.Printf("%s\n", b1.Data)
-	fmt.Printf("%x\n", b1.hash)
+// AddBlock saves provided data as a block in the blockchain
+func (bc *Blockchain) AddBlock(data string) {
+	prevBlock := bc.blocks[len(bc.blocks)-1]
+	newBlock := &Block{time.Now().Unix(), []byte(data), prevBlock.hash, []byte("")}
+	newBlock.SetHash()
+	bc.blocks = append(bc.blocks, newBlock)
+}
+
+// NewBlockchain creates a new Blockchain with genesis Block
+func NewBlockchain() *Blockchain {
+	return &Blockchain{[]*Block{NewGenesisBlock()}}
+}
+
+func main() {
+	bc := NewBlockchain()
+
+	bc.AddBlock("Send 1 BTC to Ivan")
+	bc.AddBlock("Send 2 more BTC to Ivan")
+
+	for _, block := range bc.blocks {
+		fmt.Printf("%s\n", block.Data)
+		fmt.Printf("%x\n", block.hash)
+	}
 }
