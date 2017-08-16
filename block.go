@@ -33,5 +33,5 @@ func NewBlock(data string, prevBlock []byte) *Block {
 
 // NewGenesisBlock creates and returns genesis Block
 func NewGenesisBlock() *Block {
-	return NewBlock("Genesis Block", []byte("0"))
+	return NewBlock("Genesis Block", []byte{})
 }
