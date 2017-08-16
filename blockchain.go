@@ -10,7 +10,7 @@ type Blockchain struct {
 // AddBlock saves provided data as a block in the blockchain
 func (bc *Blockchain) AddBlock(data string) {
 	prevBlock := bc.blocks[len(bc.blocks)-1]
-	newBlock := &Block{time.Now().Unix(), []byte(data), prevBlock.hash, []byte("")}
+	newBlock := &Block{time.Now().Unix(), []byte(data), prevBlock.Hash, []byte("")}
 	newBlock.SetHash()
 	bc.blocks = append(bc.blocks, newBlock)
 }

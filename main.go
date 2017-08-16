@@ -12,6 +12,6 @@ func main() {
 
 	for _, block := range bc.blocks {
 		fmt.Printf("%s\n", block.Data)
-		fmt.Printf("%x\n", block.hash)
+		fmt.Printf("%x\n", block.Hash)
 	}
 }

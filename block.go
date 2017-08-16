@@ -12,7 +12,7 @@ type Block struct {
 	Timestamp int64
 	Data      []byte
 	PrevBlock []byte
-	hash      []byte
+	Hash      []byte
 }
 
 // SetHash calculates and sets block hash
@@ -28,7 +28,7 @@ func (b *Block) SetHash() {
 	if err != nil {
 		log.Panic(err)
 	}
-	b.hash = h.Sum(nil)
+	b.Hash = h.Sum(nil)
 }
 
 // NewBlock creates and returns Block
