@@ -9,16 +9,16 @@ import (
 
 // Block keeps block headers
 type Block struct {
-	Timestamp int64
-	Data      []byte
-	PrevBlock []byte
-	Hash      []byte
+	Timestamp     int64
+	Data          []byte
+	PrevBlockHash []byte
+	Hash          []byte
 }
 
 // SetHash calculates and sets block hash
 func (b *Block) SetHash() {
 	timestamp := []byte(strconv.FormatInt(b.Timestamp, 10))
-	headers := bytes.Join([][]byte{b.PrevBlock, b.Data, timestamp}, []byte{})
+	headers := bytes.Join([][]byte{b.PrevBlockHash, b.Data, timestamp}, []byte{})
 	hash := sha256.Sum256(headers)
 
 	b.Hash = hash[:]
