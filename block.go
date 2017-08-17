@@ -25,8 +25,8 @@ func (b *Block) SetHash() {
 }
 
 // NewBlock creates and returns Block
-func NewBlock(data string, prevBlock []byte) *Block {
-	block := &Block{time.Now().Unix(), []byte(data), prevBlock, []byte{}}
+func NewBlock(data string, prevBlockHash []byte) *Block {
+	block := &Block{time.Now().Unix(), []byte(data), prevBlockHash, []byte{}}
 	block.SetHash()
 	return block
 }
