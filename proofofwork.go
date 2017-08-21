@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"crypto/sha256"
 	"encoding/binary"
+	"fmt"
 	"log"
 	"math"
 	"math/big"
@@ -55,10 +56,12 @@ func Prove(block *Block) (int, []byte) {
 	var hash [32]byte
 	nonce := 0
 
+	fmt.Printf("Mining the block containing \"%s\"\n", block.Data)
 	for nonce < maxNonce {
 		data := prepareData(block, nonce)
 
 		hash = sha256.Sum256(data)
+		fmt.Printf("\r%x", hash)
 		hashInt.SetBytes(hash[:])
 
 		if hashInt.Cmp(&target) == -1 {
@@ -67,6 +70,7 @@ func Prove(block *Block) (int, []byte) {
 			nonce++
 		}
 	}
+	fmt.Print("\n\n")
 
 	return nonce, hash[:]
 }
