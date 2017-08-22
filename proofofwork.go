@@ -12,22 +12,18 @@ var (
 	maxNonce = math.MaxInt64
 )
 
-const targetBits = 12
+const targetBits = 24 // 3 bytes
 
 // ProofOfWork represents a proof-of-work
 type ProofOfWork struct {
 	block  *Block
-	target big.Int
+	target *big.Int
 }
 
 // NewProofOfWork builds and returns a ProofOfWork
 func NewProofOfWork(b *Block) *ProofOfWork {
-	targetBytes := make([]byte, 32)
-	target := big.Int{}
-
-	numOfZeros := targetBits / 4
-	targetBytes[numOfZeros-1] = 1
-	target.SetBytes(targetBytes)
+	target := big.NewInt(1)
+	target.Lsh(target, uint(256-targetBits))
 
 	pow := &ProofOfWork{b, target}
 
@@ -63,7 +59,7 @@ func (pow *ProofOfWork) Run() (int, []byte) {
 		fmt.Printf("\r%x", hash)
 		hashInt.SetBytes(hash[:])
 
-		if hashInt.Cmp(&pow.target) == -1 {
+		if hashInt.Cmp(pow.target) == -1 {
 			break
 		} else {
 			nonce++
@@ -82,7 +78,7 @@ func (pow *ProofOfWork) ConfirmProof() bool {
 	hash := sha256.Sum256(data)
 	hashInt.SetBytes(hash[:])
 
-	confirmation := hashInt.Cmp(&pow.target) == -1
+	confirmation := hashInt.Cmp(pow.target) == -1
 
 	return confirmation
 }
