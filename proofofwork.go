@@ -75,10 +75,10 @@ func (pow *ProofOfWork) Run() (int, []byte) {
 }
 
 // ConfirmProof confirms that the proof is correct
-func (pow *ProofOfWork) ConfirmProof(nonce int) bool {
+func (pow *ProofOfWork) ConfirmProof() bool {
 	var hashInt big.Int
 
-	data := pow.prepareData(nonce)
+	data := pow.prepareData(pow.block.Nonce)
 	hash := sha256.Sum256(data)
 	hashInt.SetBytes(hash[:])
 
