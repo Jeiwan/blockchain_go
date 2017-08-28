@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"os"
 	"strconv"
 )
 
@@ -9,23 +10,32 @@ func main() {
 	bc := NewBlockchain()
 	defer bc.db.Close()
 
-	// bc.AddBlock("Send 1 BTC to Ivan")
-	// bc.AddBlock("Send 2 more BTC to Ivan")
+	if len(os.Args) < 2 {
+		fmt.Println("Wrong!")
+		os.Exit(1)
+	}
 
-	bci := bc.Iterator()
+	if os.Args[1] == "addBlock" {
+		bc.AddBlock(os.Args[2])
+		fmt.Println("Success!")
+	}
 
-	for {
-		block := bci.Next()
+	if os.Args[1] == "printChain" {
+		bci := bc.Iterator()
 
-		fmt.Printf("Prev. hash: %x\n", block.PrevBlockHash)
-		fmt.Printf("Data: %s\n", block.Data)
-		fmt.Printf("Hash: %x\n", block.Hash)
-		pow := NewProofOfWork(block)
-		fmt.Printf("PoW: %s\n", strconv.FormatBool(pow.Validate()))
-		fmt.Println()
+		for {
+			block := bci.Next()
 
-		if len(block.PrevBlockHash) == 0 {
-			break
+			fmt.Printf("Prev. hash: %x\n", block.PrevBlockHash)
+			fmt.Printf("Data: %s\n", block.Data)
+			fmt.Printf("Hash: %x\n", block.Hash)
+			pow := NewProofOfWork(block)
+			fmt.Printf("PoW: %s\n", strconv.FormatBool(pow.Validate()))
+			fmt.Println()
+
+			if len(block.PrevBlockHash) == 0 {
+				break
+			}
 		}
 	}
 }
