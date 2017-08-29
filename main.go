@@ -5,5 +5,5 @@ func main() {
 	defer bc.db.Close()
 
 	cli := CLI{bc}
-	cli.ProcessArgs()
+	cli.Run()
 }

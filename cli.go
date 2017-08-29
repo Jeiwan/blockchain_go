@@ -1,7 +1,9 @@
 package main
 
 import (
+	"flag"
 	"fmt"
+	"log"
 	"os"
 	"strconv"
 )
@@ -13,8 +15,8 @@ type CLI struct {
 
 func (cli *CLI) printUsage() {
 	fmt.Println("Usage:")
-	fmt.Println("  addBlock BLOCK_DATA - add a block to the blockchain")
-	fmt.Println("  printChain - print all the blocks of the blockchain")
+	fmt.Println("  addblock -data BLOCK_DATA - add a block to the blockchain")
+	fmt.Println("  printchain - print all the blocks of the blockchain")
 }
 
 func (cli *CLI) validateArgs() {
@@ -24,12 +26,8 @@ func (cli *CLI) validateArgs() {
 	}
 }
 
-func (cli *CLI) addBlock() {
-	if len(os.Args) < 3 {
-		fmt.Println("Error: BLOCK_DATA is not specified.")
-		os.Exit(1)
-	}
-	cli.bc.AddBlock(os.Args[2])
+func (cli *CLI) addBlock(data string) {
+	cli.bc.AddBlock(data)
 	fmt.Println("Success!")
 }
 
@@ -52,17 +50,40 @@ func (cli *CLI) printChain() {
 	}
 }
 
-// ProcessArgs parses command line arguments and processes commands
-func (cli *CLI) ProcessArgs() {
+// Run parses command line arguments and processes commands
+func (cli *CLI) Run() {
 	cli.validateArgs()
 
+	addBlockCmd := flag.NewFlagSet("addblock", flag.ExitOnError)
+	printChainCmd := flag.NewFlagSet("printchain", flag.ExitOnError)
+
+	addBlockData := addBlockCmd.String("data", "", "Block data")
+
 	switch os.Args[1] {
-	case "addBlock":
-		cli.addBlock()
-	case "printChain":
-		cli.printChain()
+	case "addblock":
+		err := addBlockCmd.Parse(os.Args[2:])
+		if err != nil {
+			log.Panic(err)
+		}
+	case "printchain":
+		err := printChainCmd.Parse(os.Args[2:])
+		if err != nil {
+			log.Panic(err)
+		}
 	default:
 		cli.printUsage()
 		os.Exit(1)
+	}
+
+	if addBlockCmd.Parsed() {
+		if *addBlockData == "" {
+			addBlockCmd.Usage()
+			os.Exit(1)
+		}
+		cli.addBlock(*addBlockData)
+	}
+
+	if printChainCmd.Parsed() {
+		cli.printChain()
 	}
 }
