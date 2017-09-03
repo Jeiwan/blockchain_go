@@ -31,18 +31,10 @@ func NewProofOfWork(b *Block) *ProofOfWork {
 }
 
 func (pow *ProofOfWork) prepareData(nonce int) []byte {
-	var txHashes [][]byte
-	var txHash [32]byte
-
-	for _, tx := range pow.block.Transactions {
-		txHashes = append(txHashes, tx.GetHash())
-	}
-	txHash = sha256.Sum256(bytes.Join(txHashes, []byte{}))
-
 	data := bytes.Join(
 		[][]byte{
 			pow.block.PrevBlockHash,
-			txHash[:],
+			pow.block.HashTransactions(),
 			IntToHex(pow.block.Timestamp),
 			IntToHex(int64(targetBits)),
 			IntToHex(int64(nonce)),
@@ -59,7 +51,7 @@ func (pow *ProofOfWork) Run() (int, []byte) {
 	var hash [32]byte
 	nonce := 0
 
-	fmt.Printf("Mining the block containing \"%s\"\n", pow.block.Data)
+	fmt.Printf("Mining a new block")
 	for nonce < maxNonce {
 		data := pow.prepareData(nonce)
 
