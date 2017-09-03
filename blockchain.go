@@ -58,17 +58,15 @@ func (bc *Blockchain) AddBlock(transactions []*Transaction) {
 	})
 }
 
-// FindUTXOs finds and returns unspend transaction outputs for the address
-func (bc *Blockchain) FindUTXOs(address string, amount int) (int, map[string][]int) {
+// FindUnspentTransactions returns a list of transactions containing unspent outputs for an address
+func (bc *Blockchain) FindUnspentTransactions(address string) []*Transaction {
 	var spentTXs map[string][]int
-	var unspentTXs map[string][]int
-	accumulated := 0
+	var unspentTXs []*Transaction
 	bci := bc.Iterator()
 
 	for {
 		block := bci.Next()
 
-	Work:
 		for _, tx := range block.Transactions {
 			txid := string(tx.GetHash())
 
@@ -82,13 +80,8 @@ func (bc *Blockchain) FindUTXOs(address string, amount int) (int, map[string][]i
 					}
 				}
 
-				if out.Unlock(address) && accumulated < amount {
-					accumulated += out.Value
-					unspentTXs[txid] = append(unspentTXs[txid], outid)
-
-					if accumulated >= amount {
-						break Work
-					}
+				if out.Unlock(address) {
+					unspentTXs = append(unspentTXs, tx)
 				}
 			}
 
@@ -106,7 +99,37 @@ func (bc *Blockchain) FindUTXOs(address string, amount int) (int, map[string][]i
 		}
 	}
 
-	return accumulated, unspentTXs
+	return unspentTXs
+}
+
+// FindUTXOs finds and returns unspend transaction outputs for the address
+func (bc *Blockchain) FindUTXOs(address string, amount int) (int, map[string][]int) {
+	var unspentOutputs map[string][]int
+	unspentTXs := bc.FindUnspentTransactions(address)
+	accumulated := 0
+
+	// TODO: Fix this
+	if amount == -1 {
+		accumulated = -2
+	}
+
+Work:
+	for _, tx := range unspentTXs {
+		txid := string(tx.GetHash())
+
+		for outid, out := range tx.Vout {
+			if out.Unlock(address) && accumulated < amount {
+				accumulated += out.Value
+				unspentOutputs[txid] = append(unspentOutputs[txid], outid)
+
+				if accumulated >= amount {
+					break Work
+				}
+			}
+		}
+	}
+
+	return accumulated, unspentOutputs
 }
 
 // Iterator ...
