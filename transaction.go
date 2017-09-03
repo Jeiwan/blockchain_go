@@ -1,6 +1,11 @@
 package main
 
-import "log"
+import (
+	"bytes"
+	"crypto/sha256"
+	"encoding/gob"
+	"log"
+)
 
 const subsidy = 10
 
@@ -13,6 +18,21 @@ type Transaction struct {
 // IsCoinbase checks whether the transaction is coinbase
 func (tx Transaction) IsCoinbase() bool {
 	return len(tx.Vin) == 1 && tx.Vin[0].Txid == -1 && tx.Vin[0].Vout == -1
+}
+
+// GetHash hashes the transaction and returns the hash
+func (tx Transaction) GetHash() []byte {
+	var encoded bytes.Buffer
+	var hash [32]byte
+
+	enc := gob.NewEncoder(&encoded)
+	err := enc.Encode(tx)
+	if err != nil {
+		log.Panic(err)
+	}
+	hash = sha256.Sum256(encoded.Bytes())
+
+	return hash[:]
 }
 
 // TXInput represents a transaction input
@@ -34,8 +54,12 @@ func (out *TXOutput) Unlock(unlockingData string) bool {
 }
 
 // NewCoinbaseTX creates a new coinbase transaction
-func NewCoinbaseTX(to string) *Transaction {
-	txin := TXInput{-1, -1, "The Times 03/Jan/2009 Chancellor on brink of second bailout for banks"}
+func NewCoinbaseTX(to, data string) *Transaction {
+	if data == "" {
+		data = "Coinbase"
+	}
+
+	txin := TXInput{-1, -1, data}
 	txout := TXOutput{subsidy, to}
 	tx := Transaction{[]TXInput{txin}, []TXOutput{txout}}
 

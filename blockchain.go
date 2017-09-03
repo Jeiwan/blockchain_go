@@ -9,6 +9,7 @@ import (
 
 const dbFile = "blockchain.db"
 const blocksBucket = "blocks"
+const genesisCoinbase = "The Times 03/Jan/2009 Chancellor on brink of second bailout for banks"
 
 // Blockchain keeps a sequence of Blocks
 type Blockchain struct {
@@ -86,7 +87,7 @@ func (i *BlockchainIterator) Next() *Block {
 }
 
 // NewBlockchain creates a new Blockchain with genesis Block
-func NewBlockchain() *Blockchain {
+func NewBlockchain(address string) *Blockchain {
 	var tip []byte
 	db, err := bolt.Open(dbFile, 0600, nil)
 	if err != nil {
@@ -98,7 +99,8 @@ func NewBlockchain() *Blockchain {
 
 		if b == nil {
 			fmt.Println("No existing blockchain found. Creating a new one...")
-			genesis := NewGenesisBlock()
+			cbtx := NewCoinbaseTX(address, genesisCoinbase)
+			genesis := NewGenesisBlock(cbtx)
 
 			b, err := tx.CreateBucket([]byte(blocksBucket))
 			if err != nil {

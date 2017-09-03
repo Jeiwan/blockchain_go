@@ -31,10 +31,18 @@ func NewProofOfWork(b *Block) *ProofOfWork {
 }
 
 func (pow *ProofOfWork) prepareData(nonce int) []byte {
+	var txHashes [][]byte
+	var txHash [32]byte
+
+	for _, tx := range pow.block.Transactions {
+		txHashes = append(txHashes, tx.GetHash())
+	}
+	txHash = sha256.Sum256(bytes.Join(txHashes, []byte{}))
+
 	data := bytes.Join(
 		[][]byte{
 			pow.block.PrevBlockHash,
-			pow.block.Data,
+			txHash[:],
 			IntToHex(pow.block.Timestamp),
 			IntToHex(int64(targetBits)),
 			IntToHex(int64(nonce)),
