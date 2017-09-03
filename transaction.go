@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"crypto/sha256"
 	"encoding/gob"
+	"encoding/hex"
 	"log"
 )
 
@@ -17,7 +18,7 @@ type Transaction struct {
 
 // IsCoinbase checks whether the transaction is coinbase
 func (tx Transaction) IsCoinbase() bool {
-	return len(tx.Vin) == 1 && tx.Vin[0].Txid == -1 && tx.Vin[0].Vout == -1
+	return len(tx.Vin) == 1 && len(tx.Vin[0].Txid) == 0 && tx.Vin[0].Vout == -1
 }
 
 // GetHash hashes the transaction and returns the hash
@@ -37,7 +38,7 @@ func (tx Transaction) GetHash() []byte {
 
 // TXInput represents a transaction input
 type TXInput struct {
-	Txid      int
+	Txid      []byte
 	Vout      int
 	ScriptSig string
 }
@@ -46,6 +47,11 @@ type TXInput struct {
 type TXOutput struct {
 	Value        int
 	ScriptPubKey string
+}
+
+// LockedBy checks whether the address initiated the transaction
+func (in *TXInput) LockedBy(address string) bool {
+	return in.ScriptSig == address
 }
 
 // Unlock checks if the output can be unlocked with the provided data
@@ -59,7 +65,7 @@ func NewCoinbaseTX(to, data string) *Transaction {
 		data = "Coinbase"
 	}
 
-	txin := TXInput{-1, -1, data}
+	txin := TXInput{[]byte{}, -1, data}
 	txout := TXOutput{subsidy, to}
 	tx := Transaction{[]TXInput{txin}, []TXOutput{txout}}
 
@@ -67,11 +73,11 @@ func NewCoinbaseTX(to, data string) *Transaction {
 }
 
 // NewUTXOTransaction creates a new transaction
-func NewUTXOTransaction(from, to string, value int) *Transaction {
+func NewUTXOTransaction(from, to string, value int, bc *Blockchain) *Transaction {
 	var inputs []TXInput
 	var outputs []TXOutput
 
-	acc, validOutputs := s.findUnspentOutputs(from, value)
+	acc, validOutputs := bc.FindUTXOs(from, value)
 
 	if acc < value {
 		log.Panic("ERROR: Not enough funds")
@@ -80,7 +86,12 @@ func NewUTXOTransaction(from, to string, value int) *Transaction {
 	// Build a list of inputs
 	for txid, outs := range validOutputs {
 		for _, out := range outs {
-			input := TXInput{txid, out, from}
+			txidbytes, err := hex.DecodeString(txid)
+			if err != nil {
+				log.Panic(err)
+			}
+
+			input := TXInput{txidbytes, out, from}
 			inputs = append(inputs, input)
 		}
 	}
