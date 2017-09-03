@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/hex"
 	"fmt"
 	"log"
 	"os"
@@ -61,7 +62,7 @@ func (bc *Blockchain) AddBlock(transactions []*Transaction) {
 
 // FindUnspentTransactions returns a list of transactions containing unspent outputs for an address
 func (bc *Blockchain) FindUnspentTransactions(address string) []*Transaction {
-	var spentTXs map[string][]int
+	spentTXs := make(map[string][]int)
 	var unspentTXs []*Transaction
 	bci := bc.Iterator()
 
@@ -69,14 +70,15 @@ func (bc *Blockchain) FindUnspentTransactions(address string) []*Transaction {
 		block := bci.Next()
 
 		for _, tx := range block.Transactions {
-			txid := string(tx.GetHash())
+			txid := hex.EncodeToString(tx.GetHash())
 
+		Outputs:
 			for outid, out := range tx.Vout {
 				// Was the output spent?
 				if spentTXs[txid] != nil {
 					for _, spentOut := range spentTXs[txid] {
 						if spentOut == outid {
-							continue
+							continue Outputs
 						}
 					}
 				}
@@ -89,7 +91,8 @@ func (bc *Blockchain) FindUnspentTransactions(address string) []*Transaction {
 			if tx.IsCoinbase() == false {
 				for _, in := range tx.Vin {
 					if in.LockedBy(address) {
-						spentTXs[string(in.Txid)] = append(spentTXs[string(in.Txid)], in.Vout)
+						inTxid := hex.EncodeToString(in.Txid)
+						spentTXs[inTxid] = append(spentTXs[inTxid], in.Vout)
 					}
 				}
 			}
@@ -105,7 +108,7 @@ func (bc *Blockchain) FindUnspentTransactions(address string) []*Transaction {
 
 // FindUTXOs finds and returns unspend transaction outputs for the address
 func (bc *Blockchain) FindUTXOs(address string, amount int) (int, map[string][]int) {
-	var unspentOutputs map[string][]int
+	unspentOutputs := make(map[string][]int)
 	unspentTXs := bc.FindUnspentTransactions(address)
 	accumulated := 0
 
@@ -116,7 +119,7 @@ func (bc *Blockchain) FindUTXOs(address string, amount int) (int, map[string][]i
 
 Work:
 	for _, tx := range unspentTXs {
-		txid := string(tx.GetHash())
+		txid := hex.EncodeToString(tx.GetHash())
 
 		for outid, out := range tx.Vout {
 			if out.Unlock(address) && accumulated < amount {
