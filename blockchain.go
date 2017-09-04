@@ -83,7 +83,7 @@ func (bc *Blockchain) FindUnspentTransactions(address string) []*Transaction {
 					}
 				}
 
-				if out.Unlock(address) {
+				if out.CanBeUnlockedWith(address) {
 					unspentTXs = append(unspentTXs, tx)
 					continue Outputs
 				}
@@ -91,7 +91,7 @@ func (bc *Blockchain) FindUnspentTransactions(address string) []*Transaction {
 
 			if tx.IsCoinbase() == false {
 				for _, in := range tx.Vin {
-					if in.LockedBy(address) {
+					if in.CanUnlockOutputWith(address) {
 						inTxID := hex.EncodeToString(in.Txid)
 						spentTXOs[inTxID] = append(spentTXOs[inTxID], in.Vout)
 					}
@@ -113,17 +113,12 @@ func (bc *Blockchain) FindUTXOs(address string, amount int) (int, map[string][]i
 	unspentTXs := bc.FindUnspentTransactions(address)
 	accumulated := 0
 
-	// TODO: Fix this
-	if amount == -1 {
-		accumulated = -2
-	}
-
 Work:
 	for _, tx := range unspentTXs {
 		txID := hex.EncodeToString(tx.GetHash())
 
 		for outIdx, out := range tx.Vout {
-			if out.Unlock(address) && accumulated < amount {
+			if out.CanBeUnlockedWith(address) && accumulated < amount {
 				accumulated += out.Value
 				unspentOutputs[txID] = append(unspentOutputs[txID], outIdx)
 

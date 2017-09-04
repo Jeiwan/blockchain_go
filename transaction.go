@@ -50,13 +50,13 @@ type TXOutput struct {
 	ScriptPubKey string
 }
 
-// LockedBy checks whether the address initiated the transaction
-func (in *TXInput) LockedBy(address string) bool {
-	return in.ScriptSig == address
+// CanUnlockOutputWith checks whether the address initiated the transaction
+func (in *TXInput) CanUnlockOutputWith(unlockingData string) bool {
+	return in.ScriptSig == unlockingData
 }
 
-// Unlock checks if the output can be unlocked with the provided data
-func (out *TXOutput) Unlock(unlockingData string) bool {
+// CanBeUnlockedWith checks if the output can be unlocked with the provided data
+func (out *TXOutput) CanBeUnlockedWith(unlockingData string) bool {
 	return out.ScriptPubKey == unlockingData
 }
 

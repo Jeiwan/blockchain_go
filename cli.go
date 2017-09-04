@@ -27,7 +27,7 @@ func (cli *CLI) getBalance(address string) {
 
 	for _, tx := range utxs {
 		for _, out := range tx.Vout {
-			if out.Unlock(address) {
+			if out.CanBeUnlockedWith(address) {
 				balance += out.Value
 			}
 		}
