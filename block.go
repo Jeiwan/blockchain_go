@@ -36,7 +36,7 @@ func (b *Block) HashTransactions() []byte {
 	var txHash [32]byte
 
 	for _, tx := range b.Transactions {
-		txHashes = append(txHashes, tx.GetHash())
+		txHashes = append(txHashes, tx.ID)
 	}
 	txHash = sha256.Sum256(bytes.Join(txHashes, []byte{}))
 

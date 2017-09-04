@@ -13,6 +13,7 @@ const subsidy = 10
 
 // Transaction represents a Bitcoin transaction
 type Transaction struct {
+	ID   []byte
 	Vin  []TXInput
 	Vout []TXOutput
 }
@@ -22,8 +23,8 @@ func (tx Transaction) IsCoinbase() bool {
 	return len(tx.Vin) == 1 && len(tx.Vin[0].Txid) == 0 && tx.Vin[0].Vout == -1
 }
 
-// GetHash hashes the transaction and returns the hash
-func (tx Transaction) GetHash() []byte {
+// SetID sets ID of a transaction
+func (tx Transaction) SetID() {
 	var encoded bytes.Buffer
 	var hash [32]byte
 
@@ -33,8 +34,7 @@ func (tx Transaction) GetHash() []byte {
 		log.Panic(err)
 	}
 	hash = sha256.Sum256(encoded.Bytes())
-
-	return hash[:]
+	tx.ID = hash[:]
 }
 
 // TXInput represents a transaction input
@@ -68,7 +68,8 @@ func NewCoinbaseTX(to, data string) *Transaction {
 
 	txin := TXInput{[]byte{}, -1, data}
 	txout := TXOutput{subsidy, to}
-	tx := Transaction{[]TXInput{txin}, []TXOutput{txout}}
+	tx := Transaction{nil, []TXInput{txin}, []TXOutput{txout}}
+	tx.SetID()
 
 	return &tx
 }
@@ -103,7 +104,8 @@ func NewUTXOTransaction(from, to string, value int, bc *Blockchain) *Transaction
 		outputs = append(outputs, TXOutput{acc - value, from}) // a change
 	}
 
-	tx := Transaction{inputs, outputs}
+	tx := Transaction{nil, inputs, outputs}
+	tx.SetID()
 
 	return &tx
 }

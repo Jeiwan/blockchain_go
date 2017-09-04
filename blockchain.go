@@ -70,7 +70,7 @@ func (bc *Blockchain) FindUnspentTransactions(address string) []*Transaction {
 		block := bci.Next()
 
 		for _, tx := range block.Transactions {
-			txID := hex.EncodeToString(tx.GetHash())
+			txID := hex.EncodeToString(tx.ID)
 
 		Outputs:
 			for outIdx, out := range tx.Vout {
@@ -115,7 +115,7 @@ func (bc *Blockchain) FindUTXOs(address string, amount int) (int, map[string][]i
 
 Work:
 	for _, tx := range unspentTXs {
-		txID := hex.EncodeToString(tx.GetHash())
+		txID := hex.EncodeToString(tx.ID)
 
 		for outIdx, out := range tx.Vout {
 			if out.CanBeUnlockedWith(address) && accumulated < amount {
