@@ -13,7 +13,7 @@ const dbFile = "blockchain.db"
 const blocksBucket = "blocks"
 const genesisCoinbase = "The Times 03/Jan/2009 Chancellor on brink of second bailout for banks"
 
-// Blockchain keeps a sequence of Blocks
+// Blockchain implements interactions with a DB
 type Blockchain struct {
 	tip []byte
 	db  *bolt.DB
@@ -25,8 +25,8 @@ type BlockchainIterator struct {
 	db          *bolt.DB
 }
 
-// AddBlock saves provided data as a block in the blockchain
-func (bc *Blockchain) AddBlock(transactions []*Transaction) {
+// MineBlock mines a new block with the provided transactions
+func (bc *Blockchain) MineBlock(transactions []*Transaction) {
 	var lastHash []byte
 
 	err := bc.db.View(func(tx *bolt.Tx) error {
@@ -60,24 +60,24 @@ func (bc *Blockchain) AddBlock(transactions []*Transaction) {
 	})
 }
 
-// FindUnspentTransactions returns a list of transactions containing unspent outputs for an address
+// FindUnspentTransactions returns a list of transactions containing unspent outputs
 func (bc *Blockchain) FindUnspentTransactions(address string) []*Transaction {
-	spentTXs := make(map[string][]int)
 	var unspentTXs []*Transaction
+	spentTXOs := make(map[string][]int)
 	bci := bc.Iterator()
 
 	for {
 		block := bci.Next()
 
 		for _, tx := range block.Transactions {
-			txid := hex.EncodeToString(tx.GetHash())
+			txID := hex.EncodeToString(tx.GetHash())
 
 		Outputs:
-			for outid, out := range tx.Vout {
+			for outIdx, out := range tx.Vout {
 				// Was the output spent?
-				if spentTXs[txid] != nil {
-					for _, spentOut := range spentTXs[txid] {
-						if spentOut == outid {
+				if spentTXOs[txID] != nil {
+					for _, spentOut := range spentTXOs[txID] {
+						if spentOut == outIdx {
 							continue Outputs
 						}
 					}
@@ -85,14 +85,15 @@ func (bc *Blockchain) FindUnspentTransactions(address string) []*Transaction {
 
 				if out.Unlock(address) {
 					unspentTXs = append(unspentTXs, tx)
+					continue Outputs
 				}
 			}
 
 			if tx.IsCoinbase() == false {
 				for _, in := range tx.Vin {
 					if in.LockedBy(address) {
-						inTxid := hex.EncodeToString(in.Txid)
-						spentTXs[inTxid] = append(spentTXs[inTxid], in.Vout)
+						inTxID := hex.EncodeToString(in.Txid)
+						spentTXOs[inTxID] = append(spentTXOs[inTxID], in.Vout)
 					}
 				}
 			}
@@ -119,12 +120,12 @@ func (bc *Blockchain) FindUTXOs(address string, amount int) (int, map[string][]i
 
 Work:
 	for _, tx := range unspentTXs {
-		txid := hex.EncodeToString(tx.GetHash())
+		txID := hex.EncodeToString(tx.GetHash())
 
-		for outid, out := range tx.Vout {
+		for outIdx, out := range tx.Vout {
 			if out.Unlock(address) && accumulated < amount {
 				accumulated += out.Value
-				unspentOutputs[txid] = append(unspentOutputs[txid], outid)
+				unspentOutputs[txID] = append(unspentOutputs[txID], outIdx)
 
 				if accumulated >= amount {
 					break Work
@@ -136,7 +137,7 @@ Work:
 	return accumulated, unspentOutputs
 }
 
-// Iterator ...
+// Iterator returns a BlockchainIterat
 func (bc *Blockchain) Iterator() *BlockchainIterator {
 	bci := &BlockchainIterator{bc.tip, bc.db}
 
@@ -175,7 +176,7 @@ func dbExists() bool {
 // NewBlockchain creates a new Blockchain with genesis Block
 func NewBlockchain(address string) *Blockchain {
 	if dbExists() == false {
-		fmt.Println("No existing blockchain found. Creating one first.")
+		fmt.Println("No existing blockchain found. Create one first.")
 		os.Exit(1)
 	}
 

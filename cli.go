@@ -78,7 +78,7 @@ func (cli *CLI) send(from, to string, amount int) {
 	defer bc.db.Close()
 
 	tx := NewUTXOTransaction(from, to, amount, bc)
-	bc.AddBlock([]*Transaction{tx})
+	bc.MineBlock([]*Transaction{tx})
 	fmt.Println("Success!")
 }
 

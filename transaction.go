@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"encoding/gob"
 	"encoding/hex"
+	"fmt"
 	"log"
 )
 
@@ -62,7 +63,7 @@ func (out *TXOutput) Unlock(unlockingData string) bool {
 // NewCoinbaseTX creates a new coinbase transaction
 func NewCoinbaseTX(to, data string) *Transaction {
 	if data == "" {
-		data = "Coinbase"
+		data = fmt.Sprintf("Reward to '%s'", to)
 	}
 
 	txin := TXInput{[]byte{}, -1, data}
@@ -86,12 +87,12 @@ func NewUTXOTransaction(from, to string, value int, bc *Blockchain) *Transaction
 	// Build a list of inputs
 	for txid, outs := range validOutputs {
 		for _, out := range outs {
-			txidbytes, err := hex.DecodeString(txid)
+			txID, err := hex.DecodeString(txid)
 			if err != nil {
 				log.Panic(err)
 			}
 
-			input := TXInput{txidbytes, out, from}
+			input := TXInput{txID, out, from}
 			inputs = append(inputs, input)
 		}
 	}
