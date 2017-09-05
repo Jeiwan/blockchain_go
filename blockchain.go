@@ -85,7 +85,6 @@ func (bc *Blockchain) FindUnspentTransactions(address string) []*Transaction {
 
 				if out.CanBeUnlockedWith(address) {
 					unspentTXs = append(unspentTXs, tx)
-					continue Outputs
 				}
 			}
 

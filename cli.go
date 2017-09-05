@@ -22,7 +22,6 @@ func (cli *CLI) getBalance(address string) {
 	defer bc.db.Close()
 
 	balance := 0
-
 	utxs := bc.FindUnspentTransactions(address)
 
 	for _, tx := range utxs {
