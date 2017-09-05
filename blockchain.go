@@ -61,8 +61,8 @@ func (bc *Blockchain) MineBlock(transactions []*Transaction) {
 }
 
 // FindUnspentTransactions returns a list of transactions containing unspent outputs
-func (bc *Blockchain) FindUnspentTransactions(address string) []*Transaction {
-	var unspentTXs []*Transaction
+func (bc *Blockchain) FindUnspentTransactions(address string) []Transaction {
+	var unspentTXs []Transaction
 	spentTXOs := make(map[string][]int)
 	bci := bc.Iterator()
 
@@ -84,7 +84,7 @@ func (bc *Blockchain) FindUnspentTransactions(address string) []*Transaction {
 				}
 
 				if out.CanBeUnlockedWith(address) {
-					unspentTXs = append(unspentTXs, tx)
+					unspentTXs = append(unspentTXs, *tx)
 				}
 			}
 
