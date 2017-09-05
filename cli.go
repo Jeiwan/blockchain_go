@@ -22,14 +22,10 @@ func (cli *CLI) getBalance(address string) {
 	defer bc.db.Close()
 
 	balance := 0
-	utxs := bc.FindUnspentTransactions(address)
+	UTXOs := bc.FindUTXO(address)
 
-	for _, tx := range utxs {
-		for _, out := range tx.Vout {
-			if out.CanBeUnlockedWith(address) {
-				balance += out.Value
-			}
-		}
+	for _, out := range UTXOs {
+		balance += out.Value
 	}
 
 	fmt.Printf("Balance of '%s': %d\n", address, balance)

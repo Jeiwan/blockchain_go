@@ -79,7 +79,7 @@ func NewUTXOTransaction(from, to string, value int, bc *Blockchain) *Transaction
 	var inputs []TXInput
 	var outputs []TXOutput
 
-	acc, validOutputs := bc.FindUTXOs(from, value)
+	acc, validOutputs := bc.FindSpendableOutputs(from, value)
 
 	if acc < value {
 		log.Panic("ERROR: Not enough funds")
