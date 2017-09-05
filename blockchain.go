@@ -11,7 +11,7 @@ import (
 
 const dbFile = "blockchain.db"
 const blocksBucket = "blocks"
-const genesisCoinbase = "The Times 03/Jan/2009 Chancellor on brink of second bailout for banks"
+const genesisCoinbaseData = "The Times 03/Jan/2009 Chancellor on brink of second bailout for banks"
 
 // Blockchain implements interactions with a DB
 type Blockchain struct {
@@ -211,7 +211,7 @@ func CreateBlockchain(address string) *Blockchain {
 	}
 
 	err = db.Update(func(tx *bolt.Tx) error {
-		cbtx := NewCoinbaseTX(address, genesisCoinbase)
+		cbtx := NewCoinbaseTX(address, genesisCoinbaseData)
 		genesis := NewGenesisBlock(cbtx)
 
 		b, err := tx.CreateBucket([]byte(blocksBucket))
