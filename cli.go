@@ -20,6 +20,7 @@ func (cli *CLI) createBlockchain(address string) {
 func (cli *CLI) createWallet() {
 	wallet := NewWallet()
 	fmt.Printf("Your address: %s\n", wallet.GetAddress())
+	wallet.SaveToFile()
 }
 
 func (cli *CLI) getBalance(address string) {

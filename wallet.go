@@ -1,15 +1,19 @@
 package main
 
 import (
+	"bytes"
 	"crypto/elliptic"
 	"crypto/rand"
 	"crypto/sha256"
+	"encoding/gob"
+	"io/ioutil"
 	"log"
 
 	"golang.org/x/crypto/ripemd160"
 )
 
 const version = byte(0x00)
+const walletFile = "wallet.dat"
 
 // Wallet ...
 type Wallet struct {
@@ -39,7 +43,18 @@ func (w Wallet) GetAddress() []byte {
 
 // SaveToFile saves the wallet to a file
 func (w Wallet) SaveToFile() {
+	var content bytes.Buffer
 
+	encoder := gob.NewEncoder(&content)
+	err := encoder.Encode(w)
+	if err != nil {
+		log.Panic(err)
+	}
+
+	err = ioutil.WriteFile(walletFile, content.Bytes(), 0644)
+	if err != nil {
+		log.Panic(err)
+	}
 }
 
 // NewWallet creates and returns a Wallet
