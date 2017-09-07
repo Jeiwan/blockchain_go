@@ -37,7 +37,12 @@ func (w Wallet) GetAddress() []byte {
 	return address
 }
 
-// NewWallet ...
+// SaveToFile saves the wallet to a file
+func (w Wallet) SaveToFile() {
+
+}
+
+// NewWallet creates and returns a Wallet
 func NewWallet() *Wallet {
 	private, public := newKeyPair()
 	wallet := Wallet{private, public}
