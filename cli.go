@@ -18,9 +18,14 @@ func (cli *CLI) createBlockchain(address string) {
 }
 
 func (cli *CLI) createWallet() {
-	wallet := NewWallet()
-	fmt.Printf("Your address: %s\n", wallet.GetAddress())
-	wallet.SaveToFile()
+	wallet, err := NewWallet()
+	if err == nil {
+		fmt.Printf("Your address: %s\n", wallet.GetAddress())
+		wallet.SaveToFile()
+	} else {
+		fmt.Println(err.Error())
+		os.Exit(1)
+	}
 }
 
 func (cli *CLI) getBalance(address string) {

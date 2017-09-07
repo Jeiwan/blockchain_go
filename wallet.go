@@ -6,8 +6,10 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/gob"
+	"errors"
 	"io/ioutil"
 	"log"
+	"os"
 
 	"golang.org/x/crypto/ripemd160"
 )
@@ -58,11 +60,14 @@ func (w Wallet) SaveToFile() {
 }
 
 // NewWallet creates and returns a Wallet
-func NewWallet() *Wallet {
+func NewWallet() (*Wallet, error) {
+	if _, err := os.Stat(walletFile); !os.IsNotExist(err) {
+		return nil, errors.New("Wallet already exists")
+	}
 	private, public := newKeyPair()
 	wallet := Wallet{private, public}
 
-	return &wallet
+	return &wallet, nil
 }
 
 func newKeyPair() ([]byte, []byte) {
