@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
 	"crypto/sha256"
@@ -19,13 +20,14 @@ const walletFile = "wallet.dat"
 
 // Wallet ...
 type Wallet struct {
-	PrivateKey []byte
-	PublicKey  []byte
+	PrivateKey ecdsa.PrivateKey
+	PublicKey  ecdsa.PublicKey
 }
 
 // GetAddress returns wallet address
 func (w Wallet) GetAddress() []byte {
-	publicSHA256 := sha256.Sum256(w.PublicKey)
+	public := append(w.PublicKey.X.Bytes(), w.PublicKey.Y.Bytes()...)
+	publicSHA256 := sha256.Sum256(public)
 
 	RIPEMD160Hasher := ripemd160.New()
 	_, err := RIPEMD160Hasher.Write(publicSHA256[:])
@@ -47,6 +49,7 @@ func (w Wallet) GetAddress() []byte {
 func (w Wallet) SaveToFile() {
 	var content bytes.Buffer
 
+	gob.Register(w.PrivateKey.Curve)
 	encoder := gob.NewEncoder(&content)
 	err := encoder.Encode(w)
 	if err != nil {
@@ -70,16 +73,14 @@ func NewWallet() (*Wallet, error) {
 	return &wallet, nil
 }
 
-func newKeyPair() ([]byte, []byte) {
+func newKeyPair() (ecdsa.PrivateKey, ecdsa.PublicKey) {
 	curve := elliptic.P256()
-	private, x, y, err := elliptic.GenerateKey(curve, rand.Reader)
+	private, err := ecdsa.GenerateKey(curve, rand.Reader)
 	if err != nil {
 		log.Panic(err)
 	}
 
-	public := append(x.Bytes(), y.Bytes()...)
-
-	return private, public
+	return *private, private.PublicKey
 }
 
 // Checksum ...
