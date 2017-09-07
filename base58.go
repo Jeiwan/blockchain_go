@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"math/big"
 )
 
@@ -32,4 +33,28 @@ func Base58Encode(input []byte) []byte {
 	}
 
 	return result
+}
+
+// Base58Decode decodes Base58 data
+func Base58Decode(input []byte) []byte {
+	result := big.NewInt(0)
+	zeroBytes := 0
+
+	for c := range input {
+		if c == 0x00 {
+			zeroBytes++
+		}
+	}
+
+	address := input[zeroBytes:]
+	for _, b := range address {
+		charIndex := bytes.IndexByte(alphabet, b)
+		result.Mul(result, big.NewInt(58))
+		result.Add(result, big.NewInt(int64(charIndex)))
+	}
+
+	raw := result.Bytes()
+	raw = append(bytes.Repeat([]byte{byte(0x00)}, zeroBytes), raw...)
+
+	return raw
 }
