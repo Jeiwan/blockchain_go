@@ -120,6 +120,17 @@ func (ws *Wallets) LoadFromFile() error {
 	return nil
 }
 
+// GetAddresses returns an array of addresses stored in the wallet file
+func (ws *Wallets) GetAddresses() []string {
+	var addresses []string
+
+	for address := range ws.Wallets {
+		addresses = append(addresses, address)
+	}
+
+	return addresses
+}
+
 // NewWallets ...
 func NewWallets() *Wallets {
 	wallets := Wallets{}
