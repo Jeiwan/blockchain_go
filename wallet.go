@@ -31,17 +31,10 @@ type Wallets struct {
 
 // GetAddress returns wallet address
 func (w Wallet) GetAddress() []byte {
-	public := append(w.PublicKey.X.Bytes(), w.PublicKey.Y.Bytes()...)
-	publicSHA256 := sha256.Sum256(public)
+	pubKey := append(w.PublicKey.X.Bytes(), w.PublicKey.Y.Bytes()...)
+	pubKeyHash := HashPubKey(pubKey)
 
-	RIPEMD160Hasher := ripemd160.New()
-	_, err := RIPEMD160Hasher.Write(publicSHA256[:])
-	if err != nil {
-		log.Panic(err)
-	}
-	publicRIPEMD160 := RIPEMD160Hasher.Sum(nil)
-
-	versionedPayload := append([]byte{version}, publicRIPEMD160...)
+	versionedPayload := append([]byte{version}, pubKeyHash...)
 	checksum := checksum(versionedPayload)
 
 	fullPayload := append(versionedPayload, checksum...)
@@ -139,6 +132,20 @@ func NewWallets() (*Wallets, error) {
 	err := wallets.LoadFromFile()
 
 	return &wallets, err
+}
+
+// HashPubKey hashes public key
+func HashPubKey(pubKey []byte) []byte {
+	publicSHA256 := sha256.Sum256(pubKey)
+
+	RIPEMD160Hasher := ripemd160.New()
+	_, err := RIPEMD160Hasher.Write(publicSHA256[:])
+	if err != nil {
+		log.Panic(err)
+	}
+	publicRIPEMD160 := RIPEMD160Hasher.Sum(nil)
+
+	return publicRIPEMD160
 }
 
 // Checksum generates a checksum for a public key
