@@ -47,7 +47,7 @@ func (tx Transaction) String() string {
 }
 
 // SetID sets ID of a transaction
-func (tx Transaction) SetID() {
+func (tx *Transaction) SetID() {
 	var encoded bytes.Buffer
 	var hash [32]byte
 
