@@ -131,22 +131,17 @@ func (ws *Wallets) GetAddresses() []string {
 	return addresses
 }
 
-// NewWallets ...
-func NewWallets() *Wallets {
+// NewWallets creates Wallets and fills it from a file if it exists
+func NewWallets() (*Wallets, error) {
 	wallets := Wallets{}
 	wallets.Wallets = make(map[string]*Wallet)
 
 	err := wallets.LoadFromFile()
-	if err != nil {
-		fmt.Println("Wallets file doesn't exist")
-		// wallets.CreateWallet()
-		// wallets.SaveToFile()
-	}
 
-	return &wallets
+	return &wallets, err
 }
 
-// Checksum ...
+// Checksum generates a checksum for a public key
 func checksum(payload []byte) []byte {
 	firstSHA := sha256.Sum256(payload)
 	secondSHA := sha256.Sum256(firstSHA[:])

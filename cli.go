@@ -18,7 +18,7 @@ func (cli *CLI) createBlockchain(address string) {
 }
 
 func (cli *CLI) createWallet() {
-	wallets := NewWallets()
+	wallets, _ := NewWallets()
 	address := wallets.CreateWallet()
 	wallets.SaveToFile()
 
@@ -40,7 +40,10 @@ func (cli *CLI) getBalance(address string) {
 }
 
 func (cli *CLI) listAddresses() {
-	wallets := NewWallets()
+	wallets, err := NewWallets()
+	if err != nil {
+		log.Panic(err)
+	}
 	addresses := wallets.GetAddresses()
 
 	for _, address := range addresses {
