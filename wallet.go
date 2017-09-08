@@ -21,7 +21,7 @@ const walletFile = "wallet.dat"
 // Wallet stores private and public keys
 type Wallet struct {
 	PrivateKey ecdsa.PrivateKey
-	PublicKey  ecdsa.PublicKey
+	PublicKey  []byte
 }
 
 // Wallets stores a collection of wallets
@@ -31,8 +31,7 @@ type Wallets struct {
 
 // GetAddress returns wallet address
 func (w Wallet) GetAddress() []byte {
-	pubKey := append(w.PublicKey.X.Bytes(), w.PublicKey.Y.Bytes()...)
-	pubKeyHash := HashPubKey(pubKey)
+	pubKeyHash := HashPubKey(w.PublicKey)
 
 	versionedPayload := append([]byte{version}, pubKeyHash...)
 	checksum := checksum(versionedPayload)
@@ -51,14 +50,15 @@ func NewWallet() *Wallet {
 	return &wallet
 }
 
-func newKeyPair() (ecdsa.PrivateKey, ecdsa.PublicKey) {
+func newKeyPair() (ecdsa.PrivateKey, []byte) {
 	curve := elliptic.P256()
 	private, err := ecdsa.GenerateKey(curve, rand.Reader)
 	if err != nil {
 		log.Panic(err)
 	}
+	pubKey := append(private.PublicKey.X.Bytes(), private.PublicKey.Y.Bytes()...)
 
-	return *private, private.PublicKey
+	return *private, pubKey
 }
 
 // CreateWallet adds a Wallet to Wallets
@@ -122,6 +122,11 @@ func (ws *Wallets) GetAddresses() []string {
 	}
 
 	return addresses
+}
+
+// GetWallet returns a Wallet by its address
+func (ws Wallets) GetWallet(address string) Wallet {
+	return *ws.Wallets[address]
 }
 
 // NewWallets creates Wallets and fills it from a file if it exists
