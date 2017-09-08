@@ -2,7 +2,11 @@ package main
 
 import (
 	"bytes"
+	"crypto/ecdsa"
+	"crypto/elliptic"
+	"crypto/rand"
 	"crypto/sha256"
+	"math/big"
 
 	"encoding/gob"
 	"encoding/hex"
@@ -59,6 +63,98 @@ func (tx *Transaction) SetID() {
 	}
 	hash = sha256.Sum256(encoded.Bytes())
 	tx.ID = hash[:]
+}
+
+// TrimmedCopy creates a trimmed copy of Transaction to be used in signing
+func (tx *Transaction) TrimmedCopy() Transaction {
+	var inputs []TXInput
+	var outputs []TXOutput
+
+	for _, vin := range tx.Vin {
+		inputs = append(inputs, TXInput{vin.Txid, vin.Vout, []byte{}})
+	}
+
+	for _, vout := range tx.Vout {
+		outputs = append(outputs, TXOutput{vout.Value, vout.ScriptPubKey})
+	}
+
+	txCopy := Transaction{tx.ID, inputs, outputs}
+
+	return txCopy
+}
+
+// Sign signs each input of a Transaction
+func (tx *Transaction) Sign(privKey ecdsa.PrivateKey, prevTx *Transaction) {
+	if tx.IsCoinbase() {
+		return
+	}
+
+	for _, vin := range tx.Vin {
+		if bytes.Compare(vin.Txid, prevTx.ID) != 0 {
+			log.Panic("ERROR: Previous transaction is not correct")
+		}
+	}
+
+	txCopy := tx.TrimmedCopy()
+
+	for inID, vin := range txCopy.Vin {
+		txCopy.Vin[inID].ScriptSig = prevTx.Vout[vin.Vout].ScriptPubKey
+		txCopy.SetID()
+		txCopy.Vin[inID].ScriptSig = []byte{}
+
+		r, s, err := ecdsa.Sign(rand.Reader, &privKey, txCopy.ID)
+		if err != nil {
+			log.Panic(err)
+		}
+		signature := append(r.Bytes(), s.Bytes()...)
+
+		tx.Vin[inID].ScriptSig = append(signature, tx.Vin[inID].ScriptSig...)
+	}
+}
+
+// Verify verifies signatures of Transaction inputs
+func (tx *Transaction) Verify(prevTx *Transaction) bool {
+	sigLen := 64
+
+	if tx.IsCoinbase() {
+		return true
+	}
+
+	for _, vin := range tx.Vin {
+		if bytes.Compare(vin.Txid, prevTx.ID) != 0 {
+			log.Panic("ERROR: Previous transaction is not correct")
+		}
+	}
+
+	txCopy := tx.TrimmedCopy()
+	curve := elliptic.P256()
+
+	for inID, vin := range tx.Vin {
+		txCopy.Vin[inID].ScriptSig = prevTx.Vout[vin.Vout].ScriptPubKey
+		txCopy.SetID()
+		txCopy.Vin[inID].ScriptSig = []byte{}
+
+		signature := vin.ScriptSig[:sigLen]
+		pubKey := vin.ScriptSig[sigLen:]
+
+		r := big.Int{}
+		s := big.Int{}
+		r.SetBytes(signature[:(sigLen / 2)])
+		s.SetBytes(signature[(sigLen / 2):])
+
+		x := big.Int{}
+		y := big.Int{}
+		keyLen := len(pubKey)
+		x.SetBytes(pubKey[:(keyLen / 2)])
+		y.SetBytes(pubKey[(keyLen / 2):])
+
+		rawPubKey := ecdsa.PublicKey{curve, &x, &y}
+		if ecdsa.Verify(&rawPubKey, txCopy.ID, &r, &s) == false {
+			return false
+		}
+	}
+
+	return true
 }
 
 // TXInput represents a transaction input
