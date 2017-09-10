@@ -29,29 +29,6 @@ func (tx Transaction) IsCoinbase() bool {
 	return len(tx.Vin) == 1 && len(tx.Vin[0].Txid) == 0 && tx.Vin[0].Vout == -1
 }
 
-// String returns a human-readable representation of a transaction
-func (tx Transaction) String() string {
-	var lines []string
-
-	lines = append(lines, fmt.Sprintf("Transaction %x:", tx.ID))
-
-	for i, input := range tx.Vin {
-
-		lines = append(lines, fmt.Sprintf("  Input %d:", i))
-		lines = append(lines, fmt.Sprintf("    TXID:   %x", input.Txid))
-		lines = append(lines, fmt.Sprintf("    Out:    %d", input.Vout))
-		lines = append(lines, fmt.Sprintf("    Script: %x", input.ScriptSig))
-	}
-
-	for i, output := range tx.Vout {
-		lines = append(lines, fmt.Sprintf("  Output %d:", i))
-		lines = append(lines, fmt.Sprintf("    Value:  %d", output.Value))
-		lines = append(lines, fmt.Sprintf("    Script: %x", output.ScriptPubKey))
-	}
-
-	return strings.Join(lines, "\n")
-}
-
 // SetID sets ID of a transaction
 func (tx *Transaction) SetID() {
 	var encoded bytes.Buffer
@@ -64,24 +41,6 @@ func (tx *Transaction) SetID() {
 	}
 	hash = sha256.Sum256(encoded.Bytes())
 	tx.ID = hash[:]
-}
-
-// TrimmedCopy creates a trimmed copy of Transaction to be used in signing
-func (tx *Transaction) TrimmedCopy() Transaction {
-	var inputs []TXInput
-	var outputs []TXOutput
-
-	for _, vin := range tx.Vin {
-		inputs = append(inputs, TXInput{vin.Txid, vin.Vout, []byte{}})
-	}
-
-	for _, vout := range tx.Vout {
-		outputs = append(outputs, TXOutput{vout.Value, vout.ScriptPubKey})
-	}
-
-	txCopy := Transaction{tx.ID, inputs, outputs}
-
-	return txCopy
 }
 
 // Sign signs each input of a Transaction
@@ -112,6 +71,47 @@ func (tx *Transaction) Sign(privKey ecdsa.PrivateKey, prevTXs map[string]Transac
 
 		tx.Vin[inID].ScriptSig = append(signature, tx.Vin[inID].ScriptSig...)
 	}
+}
+
+// String returns a human-readable representation of a transaction
+func (tx Transaction) String() string {
+	var lines []string
+
+	lines = append(lines, fmt.Sprintf("Transaction %x:", tx.ID))
+
+	for i, input := range tx.Vin {
+
+		lines = append(lines, fmt.Sprintf("  Input %d:", i))
+		lines = append(lines, fmt.Sprintf("    TXID:   %x", input.Txid))
+		lines = append(lines, fmt.Sprintf("    Out:    %d", input.Vout))
+		lines = append(lines, fmt.Sprintf("    Script: %x", input.ScriptSig))
+	}
+
+	for i, output := range tx.Vout {
+		lines = append(lines, fmt.Sprintf("  Output %d:", i))
+		lines = append(lines, fmt.Sprintf("    Value:  %d", output.Value))
+		lines = append(lines, fmt.Sprintf("    Script: %x", output.ScriptPubKey))
+	}
+
+	return strings.Join(lines, "\n")
+}
+
+// TrimmedCopy creates a trimmed copy of Transaction to be used in signing
+func (tx *Transaction) TrimmedCopy() Transaction {
+	var inputs []TXInput
+	var outputs []TXOutput
+
+	for _, vin := range tx.Vin {
+		inputs = append(inputs, TXInput{vin.Txid, vin.Vout, []byte{}})
+	}
+
+	for _, vout := range tx.Vout {
+		outputs = append(outputs, TXOutput{vout.Value, vout.ScriptPubKey})
+	}
+
+	txCopy := Transaction{tx.ID, inputs, outputs}
+
+	return txCopy
 }
 
 // Verify verifies signatures of Transaction inputs
@@ -158,46 +158,6 @@ func (tx *Transaction) Verify(prevTXs map[string]Transaction) bool {
 	}
 
 	return true
-}
-
-// TXInput represents a transaction input
-type TXInput struct {
-	Txid      []byte
-	Vout      int
-	ScriptSig []byte
-}
-
-// TXOutput represents a transaction output
-type TXOutput struct {
-	Value        int
-	ScriptPubKey []byte
-}
-
-// UnlocksOutputWith checks whether the address initiated the transaction
-func (in *TXInput) UnlocksOutputWith(pubKeyHash []byte) bool {
-	lockingHash := HashPubKey(in.ScriptSig)
-
-	return bytes.Compare(lockingHash, pubKeyHash) == 0
-}
-
-// Lock signs the output
-func (out *TXOutput) Lock(address []byte) {
-	pubKeyHash := Base58Decode(address)
-	pubKeyHash = pubKeyHash[1 : len(pubKeyHash)-4]
-	out.ScriptPubKey = pubKeyHash
-}
-
-// Unlock checks if the output can be used by the owner of the pubkey
-func (out *TXOutput) Unlock(pubKeyHash []byte) bool {
-	return bytes.Compare(out.ScriptPubKey, pubKeyHash) == 0
-}
-
-// NewTXOutput create a new TXOutput
-func NewTXOutput(value int, address string) *TXOutput {
-	txo := &TXOutput{value, nil}
-	txo.Lock([]byte(address))
-
-	return txo
 }
 
 // NewCoinbaseTX creates a new coinbase transaction
