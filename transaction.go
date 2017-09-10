@@ -54,21 +54,6 @@ func (tx *Transaction) Hash() []byte {
 	return hash[:]
 }
 
-// SetID sets ID of a transaction
-// TODO: Remove this
-func (tx *Transaction) SetID() {
-	var encoded bytes.Buffer
-	var hash [32]byte
-
-	enc := gob.NewEncoder(&encoded)
-	err := enc.Encode(tx)
-	if err != nil {
-		log.Panic(err)
-	}
-	hash = sha256.Sum256(encoded.Bytes())
-	tx.ID = hash[:]
-}
-
 // Sign signs each input of a Transaction
 func (tx *Transaction) Sign(privKey ecdsa.PrivateKey, prevTXs map[string]Transaction) {
 	if tx.IsCoinbase() {
@@ -86,7 +71,7 @@ func (tx *Transaction) Sign(privKey ecdsa.PrivateKey, prevTXs map[string]Transac
 	for inID, vin := range txCopy.Vin {
 		prevTx := prevTXs[hex.EncodeToString(vin.Txid)]
 		txCopy.Vin[inID].ScriptSig = prevTx.Vout[vin.Vout].ScriptPubKey
-		txCopy.SetID()
+		txCopy.ID = txCopy.Hash()
 		txCopy.Vin[inID].ScriptSig = []byte{}
 
 		r, s, err := ecdsa.Sign(rand.Reader, &privKey, txCopy.ID)
@@ -160,7 +145,7 @@ func (tx *Transaction) Verify(prevTXs map[string]Transaction) bool {
 	for inID, vin := range tx.Vin {
 		prevTx := prevTXs[hex.EncodeToString(vin.Txid)]
 		txCopy.Vin[inID].ScriptSig = prevTx.Vout[vin.Vout].ScriptPubKey
-		txCopy.SetID()
+		txCopy.ID = txCopy.Hash()
 		txCopy.Vin[inID].ScriptSig = []byte{}
 
 		signature := vin.ScriptSig[:sigLen]
@@ -195,7 +180,7 @@ func NewCoinbaseTX(to, data string) *Transaction {
 	txin := TXInput{[]byte{}, -1, []byte(data)}
 	txout := NewTXOutput(subsidy, to)
 	tx := Transaction{nil, []TXInput{txin}, []TXOutput{*txout}}
-	tx.SetID()
+	tx.ID = tx.Hash()
 
 	return &tx
 }
@@ -237,7 +222,7 @@ func NewUTXOTransaction(from, to string, amount int, bc *Blockchain) *Transactio
 	}
 
 	tx := Transaction{nil, inputs, outputs}
-	tx.SetID()
+	tx.ID = tx.Hash()
 	bc.SignTransaction(&tx, wallet.PrivateKey)
 
 	return &tx
