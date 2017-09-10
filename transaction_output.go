@@ -15,8 +15,8 @@ func (out *TXOutput) Lock(address []byte) {
 	out.ScriptPubKey = pubKeyHash
 }
 
-// Unlock checks if the output can be used by the owner of the pubkey
-func (out *TXOutput) Unlock(pubKeyHash []byte) bool {
+// IsLockedWithKey checks if the output can be used by the owner of the pubkey
+func (out *TXOutput) IsLockedWithKey(pubKeyHash []byte) bool {
 	return bytes.Compare(out.ScriptPubKey, pubKeyHash) == 0
 }
 

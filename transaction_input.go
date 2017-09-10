@@ -9,8 +9,8 @@ type TXInput struct {
 	ScriptSig []byte
 }
 
-// UnlocksOutputWith checks whether the address initiated the transaction
-func (in *TXInput) UnlocksOutputWith(pubKeyHash []byte) bool {
+// UsesKey checks whether the address initiated the transaction
+func (in *TXInput) UsesKey(pubKeyHash []byte) bool {
 	sigLen := 64
 	pubKey := in.ScriptSig[sigLen:]
 	lockingHash := HashPubKey(pubKey)
