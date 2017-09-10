@@ -6,14 +6,13 @@ import "bytes"
 type TXInput struct {
 	Txid      []byte
 	Vout      int
-	ScriptSig []byte
+	Signature []byte
+	PubKey    []byte
 }
 
 // UsesKey checks whether the address initiated the transaction
 func (in *TXInput) UsesKey(pubKeyHash []byte) bool {
-	sigLen := 64
-	pubKey := in.ScriptSig[sigLen:]
-	lockingHash := HashPubKey(pubKey)
+	lockingHash := HashPubKey(in.PubKey)
 
 	return bytes.Compare(lockingHash, pubKeyHash) == 0
 }
