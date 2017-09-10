@@ -36,6 +36,7 @@ func (tx Transaction) String() string {
 	lines = append(lines, fmt.Sprintf("Transaction %x:", tx.ID))
 
 	for i, input := range tx.Vin {
+
 		lines = append(lines, fmt.Sprintf("  Input %d:", i))
 		lines = append(lines, fmt.Sprintf("    TXID:   %x", input.Txid))
 		lines = append(lines, fmt.Sprintf("    Out:    %d", input.Vout))
@@ -84,13 +85,13 @@ func (tx *Transaction) TrimmedCopy() Transaction {
 }
 
 // Sign signs each input of a Transaction
-func (tx *Transaction) Sign(privKey ecdsa.PrivateKey, prevTx *Transaction) {
+func (tx *Transaction) Sign(privKey ecdsa.PrivateKey, prevTXs map[string]Transaction) {
 	if tx.IsCoinbase() {
 		return
 	}
 
 	for _, vin := range tx.Vin {
-		if bytes.Compare(vin.Txid, prevTx.ID) != 0 {
+		if prevTXs[hex.EncodeToString(vin.Txid)].ID == nil {
 			log.Panic("ERROR: Previous transaction is not correct")
 		}
 	}
@@ -98,6 +99,7 @@ func (tx *Transaction) Sign(privKey ecdsa.PrivateKey, prevTx *Transaction) {
 	txCopy := tx.TrimmedCopy()
 
 	for inID, vin := range txCopy.Vin {
+		prevTx := prevTXs[hex.EncodeToString(vin.Txid)]
 		txCopy.Vin[inID].ScriptSig = prevTx.Vout[vin.Vout].ScriptPubKey
 		txCopy.SetID()
 		txCopy.Vin[inID].ScriptSig = []byte{}
@@ -113,7 +115,7 @@ func (tx *Transaction) Sign(privKey ecdsa.PrivateKey, prevTx *Transaction) {
 }
 
 // Verify verifies signatures of Transaction inputs
-func (tx *Transaction) Verify(prevTx *Transaction) bool {
+func (tx *Transaction) Verify(prevTXs map[string]Transaction) bool {
 	sigLen := 64
 
 	if tx.IsCoinbase() {
@@ -121,7 +123,7 @@ func (tx *Transaction) Verify(prevTx *Transaction) bool {
 	}
 
 	for _, vin := range tx.Vin {
-		if bytes.Compare(vin.Txid, prevTx.ID) != 0 {
+		if prevTXs[hex.EncodeToString(vin.Txid)].ID == nil {
 			log.Panic("ERROR: Previous transaction is not correct")
 		}
 	}
@@ -130,6 +132,7 @@ func (tx *Transaction) Verify(prevTx *Transaction) bool {
 	curve := elliptic.P256()
 
 	for inID, vin := range tx.Vin {
+		prevTx := prevTXs[hex.EncodeToString(vin.Txid)]
 		txCopy.Vin[inID].ScriptSig = prevTx.Vout[vin.Vout].ScriptPubKey
 		txCopy.SetID()
 		txCopy.Vin[inID].ScriptSig = []byte{}
@@ -249,6 +252,7 @@ func NewUTXOTransaction(from, to string, amount int, bc *Blockchain) *Transactio
 
 	tx := Transaction{nil, inputs, outputs}
 	tx.SetID()
+	bc.SignTransaction(&tx, wallet.PrivateKey)
 
 	return &tx
 }
