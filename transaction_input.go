@@ -11,7 +11,9 @@ type TXInput struct {
 
 // UnlocksOutputWith checks whether the address initiated the transaction
 func (in *TXInput) UnlocksOutputWith(pubKeyHash []byte) bool {
-	lockingHash := HashPubKey(in.ScriptSig)
+	sigLen := 64
+	pubKey := in.ScriptSig[sigLen:]
+	lockingHash := HashPubKey(pubKey)
 
 	return bytes.Compare(lockingHash, pubKeyHash) == 0
 }
