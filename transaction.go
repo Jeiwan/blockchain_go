@@ -89,21 +89,21 @@ func (tx *Transaction) Sign(privKey ecdsa.PrivateKey, prevTXs map[string]Transac
 func (tx Transaction) String() string {
 	var lines []string
 
-	lines = append(lines, fmt.Sprintf("Transaction %x:", tx.ID))
+	lines = append(lines, fmt.Sprintf("--- Transaction %x:", tx.ID))
 
 	for i, input := range tx.Vin {
 
-		lines = append(lines, fmt.Sprintf("  Input %d:", i))
-		lines = append(lines, fmt.Sprintf("    TXID:      %x", input.Txid))
-		lines = append(lines, fmt.Sprintf("    Out:       %d", input.Vout))
-		lines = append(lines, fmt.Sprintf("    Signature: %x", input.Signature))
-		lines = append(lines, fmt.Sprintf("    PubKey:    %x", input.PubKey))
+		lines = append(lines, fmt.Sprintf("     Input %d:", i))
+		lines = append(lines, fmt.Sprintf("       TXID:      %x", input.Txid))
+		lines = append(lines, fmt.Sprintf("       Out:       %d", input.Vout))
+		lines = append(lines, fmt.Sprintf("       Signature: %x", input.Signature))
+		lines = append(lines, fmt.Sprintf("       PubKey:    %x", input.PubKey))
 	}
 
 	for i, output := range tx.Vout {
-		lines = append(lines, fmt.Sprintf("  Output %d:", i))
-		lines = append(lines, fmt.Sprintf("    Value:  %d", output.Value))
-		lines = append(lines, fmt.Sprintf("    Script: %x", output.PubKeyHash))
+		lines = append(lines, fmt.Sprintf("     Output %d:", i))
+		lines = append(lines, fmt.Sprintf("       Value:  %d", output.Value))
+		lines = append(lines, fmt.Sprintf("       Script: %x", output.PubKeyHash))
 	}
 
 	return strings.Join(lines, "\n")
