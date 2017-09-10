@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-// Block keeps block headers
+// Block represents a block in the blockchain
 type Block struct {
 	Timestamp     int64
 	Transactions  []*Transaction
@@ -34,26 +34,13 @@ func NewGenesisBlock(coinbase *Transaction) *Block {
 	return NewBlock([]*Transaction{coinbase}, []byte{})
 }
 
-// DeserializeBlock deserializes a block
-func DeserializeBlock(d []byte) *Block {
-	var block Block
-
-	decoder := gob.NewDecoder(bytes.NewReader(d))
-	err := decoder.Decode(&block)
-	if err != nil {
-		log.Panic(err)
-	}
-
-	return &block
-}
-
 // HashTransactions returns a hash of the transactions in the block
 func (b *Block) HashTransactions() []byte {
 	var txHashes [][]byte
 	var txHash [32]byte
 
 	for _, tx := range b.Transactions {
-		txHashes = append(txHashes, tx.ID)
+		txHashes = append(txHashes, tx.Hash())
 	}
 	txHash = sha256.Sum256(bytes.Join(txHashes, []byte{}))
 
@@ -71,4 +58,17 @@ func (b *Block) Serialize() []byte {
 	}
 
 	return result.Bytes()
+}
+
+// DeserializeBlock deserializes a block
+func DeserializeBlock(d []byte) *Block {
+	var block Block
+
+	decoder := gob.NewDecoder(bytes.NewReader(d))
+	err := decoder.Decode(&block)
+	if err != nil {
+		log.Panic(err)
+	}
+
+	return &block
 }
