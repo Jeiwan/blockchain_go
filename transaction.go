@@ -144,7 +144,7 @@ func (tx *Transaction) Verify(prevTXs map[string]Transaction) bool {
 
 	for inID, vin := range tx.Vin {
 		prevTx := prevTXs[hex.EncodeToString(vin.Txid)]
-		txCopy.Vin[inID].Signature = []byte{}
+		txCopy.Vin[inID].Signature = nil
 		txCopy.Vin[inID].PubKey = prevTx.Vout[vin.Vout].PubKeyHash
 		txCopy.ID = txCopy.Hash()
 		txCopy.Vin[inID].PubKey = []byte{}
