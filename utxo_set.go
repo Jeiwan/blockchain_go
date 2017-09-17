@@ -10,16 +10,15 @@ import (
 const utxoBucket = "chainstate"
 
 // UTXOSet represents UTXO set
-type UTXOSet struct{}
+type UTXOSet struct {
+	Blockchain *Blockchain
+}
 
 // Reindex rebuilds the UTXO set
-func (u UTXOSet) Reindex(bc *Blockchain) {
-	db, err := bolt.Open(dbFile, 0600, nil)
-	if err != nil {
-		log.Panic(err)
-	}
+func (u UTXOSet) Reindex() {
+	db := u.Blockchain.db
 
-	err = db.Update(func(tx *bolt.Tx) error {
+	err := db.Update(func(tx *bolt.Tx) error {
 		bucketName := []byte(utxoBucket)
 		b := tx.Bucket(bucketName)
 
@@ -41,7 +40,7 @@ func (u UTXOSet) Reindex(bc *Blockchain) {
 		log.Panic(err)
 	}
 
-	UTXO := bc.FindAllUTXO()
+	UTXO := u.Blockchain.FindAllUTXO()
 
 	err = db.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(utxoBucket))
@@ -64,14 +63,10 @@ func (u UTXOSet) Reindex(bc *Blockchain) {
 
 // GetCount returns the number of transactions in the UTXO set
 func (u UTXOSet) GetCount() int {
+	db := u.Blockchain.db
 	counter := 0
 
-	db, err := bolt.Open(dbFile, 0600, nil)
-	if err != nil {
-		log.Panic(err)
-	}
-
-	err = db.View(func(tx *bolt.Tx) error {
+	err := db.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(utxoBucket))
 		c := b.Cursor()
 
@@ -81,6 +76,9 @@ func (u UTXOSet) GetCount() int {
 
 		return nil
 	})
+	if err != nil {
+		log.Panic(err)
+	}
 
 	return counter
 }
