@@ -187,22 +187,6 @@ func (bc *Blockchain) FindUnspentTransactions(pubKeyHash []byte) []Transaction {
 	return unspentTXs
 }
 
-// FindUTXO finds and returns all unspent transaction outputs
-func (bc *Blockchain) FindUTXO(pubKeyHash []byte) []TXOutput {
-	var UTXOs []TXOutput
-	unspentTransactions := bc.FindUnspentTransactions(pubKeyHash)
-
-	for _, tx := range unspentTransactions {
-		for _, out := range tx.Vout {
-			if out.IsLockedWithKey(pubKeyHash) {
-				UTXOs = append(UTXOs, out)
-			}
-		}
-	}
-
-	return UTXOs
-}
-
 // FindAllUTXO finds all unspent transaction outputs and returns transactions with spent outputs removed
 func (bc *Blockchain) FindAllUTXO() map[string]TXOutputs {
 	UTXO := make(map[string]TXOutputs)
