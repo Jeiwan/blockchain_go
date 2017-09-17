@@ -13,7 +13,7 @@ func (cli *CLI) send(from, to string, amount int) {
 		log.Panic("ERROR: Recipient address is not valid")
 	}
 
-	bc := NewBlockchain(from)
+	bc := NewBlockchain()
 	defer bc.db.Close()
 
 	tx := NewUTXOTransaction(from, to, amount, bc)

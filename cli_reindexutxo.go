@@ -3,7 +3,7 @@ package main
 import "fmt"
 
 func (cli *CLI) reindexUTXO() {
-	bc := NewBlockchain("")
+	bc := NewBlockchain()
 	UTXOSet := UTXOSet{bc}
 	UTXOSet.Reindex()
 
