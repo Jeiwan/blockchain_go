@@ -121,7 +121,7 @@ func (u UTXOSet) Reindex() {
 		log.Panic(err)
 	}
 
-	UTXO := u.Blockchain.FindAllUTXO()
+	UTXO := u.Blockchain.FindUTXO()
 
 	err = db.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(utxoBucket))
