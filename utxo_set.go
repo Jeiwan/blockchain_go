@@ -82,3 +82,31 @@ func (u UTXOSet) GetCount() int {
 
 	return counter
 }
+
+// FindUTXO finds UTXO for a public key hash
+func (u UTXOSet) FindUTXO(pubKeyHash []byte) []TXOutput {
+	var UTXOs []TXOutput
+	db := u.Blockchain.db
+
+	err := db.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(utxoBucket))
+		c := b.Cursor()
+
+		for k, v := c.First(); k != nil; k, v = c.Next() {
+			outs := DeserializeOutputs(v)
+
+			for _, out := range outs.Outputs {
+				if out.IsLockedWithKey(pubKeyHash) {
+					UTXOs = append(UTXOs, out)
+				}
+			}
+		}
+
+		return nil
+	})
+	if err != nil {
+		log.Panic(err)
+	}
+
+	return UTXOs
+}
