@@ -98,19 +98,15 @@ func (u UTXOSet) CountTransactions() int {
 // Reindex rebuilds the UTXO set
 func (u UTXOSet) Reindex() {
 	db := u.Blockchain.db
+	bucketName := []byte(utxoBucket)
 
 	err := db.Update(func(tx *bolt.Tx) error {
-		bucketName := []byte(utxoBucket)
-		b := tx.Bucket(bucketName)
-
-		if b != nil {
-			err := tx.DeleteBucket(bucketName)
-			if err != nil {
-				log.Panic(err)
-			}
+		err := tx.DeleteBucket(bucketName)
+		if err != nil && err != bolt.ErrBucketNotFound {
+			log.Panic(err)
 		}
 
-		_, err := tx.CreateBucket(bucketName)
+		_, err = tx.CreateBucket(bucketName)
 		if err != nil {
 			log.Panic(err)
 		}
@@ -124,7 +120,7 @@ func (u UTXOSet) Reindex() {
 	UTXO := u.Blockchain.FindUTXO()
 
 	err = db.Update(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(utxoBucket))
+		b := tx.Bucket(bucketName)
 
 		for txID, outs := range UTXO {
 			key, err := hex.DecodeString(txID)
@@ -154,8 +150,8 @@ func (u UTXOSet) Update(block *Block) {
 			if tx.IsCoinbase() == false {
 				for _, vin := range tx.Vin {
 					updatedOuts := TXOutputs{}
-					data := b.Get(vin.Txid)
-					outs := DeserializeOutputs(data)
+					outsBytes := b.Get(vin.Txid)
+					outs := DeserializeOutputs(outsBytes)
 
 					for outIdx, out := range outs.Outputs {
 						if outIdx != vin.Vout {
