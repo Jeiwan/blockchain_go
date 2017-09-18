@@ -73,8 +73,8 @@ func (u UTXOSet) FindUTXO(pubKeyHash []byte) []TXOutput {
 	return UTXOs
 }
 
-// GetCount returns the number of transactions in the UTXO set
-func (u UTXOSet) GetCount() int {
+// CountTransactions returns the number of transactions in the UTXO set
+func (u UTXOSet) CountTransactions() int {
 	db := u.Blockchain.db
 	counter := 0
 

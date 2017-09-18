@@ -7,6 +7,6 @@ func (cli *CLI) reindexUTXO() {
 	UTXOSet := UTXOSet{bc}
 	UTXOSet.Reindex()
 
-	count := UTXOSet.GetCount()
+	count := UTXOSet.CountTransactions()
 	fmt.Printf("Done! There are %d transactions in the UTXO set.\n", count)
 }
