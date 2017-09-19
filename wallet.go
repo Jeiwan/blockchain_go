@@ -72,7 +72,7 @@ func checksum(payload []byte) []byte {
 	firstSHA := sha256.Sum256(payload)
 	secondSHA := sha256.Sum256(firstSHA[:])
 
-	return secondSHA[len(secondSHA)-addressChecksumLen:]
+	return secondSHA[:addressChecksumLen]
 }
 
 func newKeyPair() (ecdsa.PrivateKey, []byte) {
