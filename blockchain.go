@@ -97,6 +97,11 @@ func NewBlockchain(nodeID string) *Blockchain {
 	return &bc
 }
 
+// Reset removes all blockchain data
+func (bc *Blockchain) Reset() {
+
+}
+
 // FindTransaction finds a transaction by its ID
 func (bc *Blockchain) FindTransaction(ID []byte) (Transaction, error) {
 	bci := bc.Iterator()
@@ -167,6 +172,30 @@ func (bc *Blockchain) Iterator() *BlockchainIterator {
 	bci := &BlockchainIterator{bc.tip, bc.db}
 
 	return bci
+}
+
+// GetBlock finds a block by its hash and returns it
+func (bc *Blockchain) GetBlock(blockHash []byte) (Block, error) {
+	var block Block
+
+	err := bc.db.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(blocksBucket))
+
+		blockData := b.Get(blockHash)
+
+		if blockData == nil {
+			return errors.New("Block is not found.")
+		}
+
+		block = *DeserializeBlock(blockData)
+
+		return nil
+	})
+	if err != nil {
+		return block, err
+	}
+
+	return block, nil
 }
 
 // GetBlockHashes returns a list of hashes of all the blocks in the chain

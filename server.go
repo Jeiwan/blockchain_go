@@ -22,13 +22,25 @@ type addr struct {
 	AddrList []string
 }
 
+type block struct {
+	AddrFrom string
+	Block    []byte
+}
+
 type getblocks struct {
 	AddrFrom string
 }
 
+type getdata struct {
+	AddrFrom string
+	Type     string
+	ID       []byte
+}
+
 type inv struct {
-	Type  string
-	Items [][]byte
+	AddrFrom string
+	Type     string
+	Items    [][]byte
 }
 
 type verack struct {
@@ -81,6 +93,14 @@ func sendAddr(address string) {
 	sendData(address, request)
 }
 
+func sendBlock(addr string, b *Block) {
+	data := block{nodeAddress, b.Serialize()}
+	payload := gobEncode(data)
+	request := append(commandToBytes("block"), payload...)
+
+	sendData(addr, request)
+}
+
 func sendData(addr string, data []byte) {
 	conn, err := net.Dial(protocol, addr)
 	if err != nil {
@@ -95,7 +115,7 @@ func sendData(addr string, data []byte) {
 }
 
 func sendInv(address, kind string, items [][]byte) {
-	inventory := inv{kind, items}
+	inventory := inv{nodeAddress, kind, items}
 	payload := gobEncode(inventory)
 	request := append(commandToBytes("inv"), payload...)
 
@@ -105,6 +125,13 @@ func sendInv(address, kind string, items [][]byte) {
 func sendGetBlocks(address string) {
 	payload := gobEncode(getblocks{nodeAddress})
 	request := append(commandToBytes("getblocks"), payload...)
+
+	sendData(address, request)
+}
+
+func sendGetData(address, kind string, id []byte) {
+	payload := gobEncode(getdata{nodeAddress, kind, id})
+	request := append(commandToBytes("getdata"), payload...)
 
 	sendData(address, request)
 }
@@ -141,7 +168,25 @@ func handleAddr(request []byte) {
 	requestBlocks()
 }
 
-func handleInv(request []byte) {
+func handleBlock(request []byte, bc *Blockchain) {
+	var buff bytes.Buffer
+	var payload block
+
+	buff.Write(request[commandLength:])
+	dec := gob.NewDecoder(&buff)
+	err := dec.Decode(&payload)
+	if err != nil {
+		log.Panic(err)
+	}
+
+	blockData := payload.Block
+	block := DeserializeBlock(blockData)
+
+	fmt.Println("Recevied a new block!")
+	fmt.Println(block)
+}
+
+func handleInv(request []byte, bc *Blockchain) {
 	var buff bytes.Buffer
 	var payload inv
 
@@ -152,7 +197,14 @@ func handleInv(request []byte) {
 		log.Panic(err)
 	}
 
-	fmt.Printf("Recevied %d %s\n", len(payload.Items), payload.Type)
+	fmt.Printf("Recevied inventory with %d %s\n", len(payload.Items), payload.Type)
+	blocks := bc.GetBlockHashes()
+
+	if len(blocks) < len(payload.Items) {
+		for _, blockHash := range invResponse.Items {
+			sendGetData(sourceNode, "block", blockHash)
+		}
+	}
 }
 
 func handleGetBlocks(request []byte, bc *Blockchain) {
@@ -168,6 +220,27 @@ func handleGetBlocks(request []byte, bc *Blockchain) {
 
 	blocks := bc.GetBlockHashes()
 	sendInv(payload.AddrFrom, "blocks", blocks)
+}
+
+func handleGetData(request []byte, bc *Blockchain) {
+	var buff bytes.Buffer
+	var payload getdata
+
+	buff.Write(request[commandLength:])
+	dec := gob.NewDecoder(&buff)
+	err := dec.Decode(&payload)
+	if err != nil {
+		log.Panic(err)
+	}
+
+	if payload.Type == "block" {
+		block, err := bc.GetBlock([]byte(payload.ID))
+		if err != nil {
+			return
+		}
+
+		sendBlock(payload.AddrFrom, &block)
+	}
 }
 
 func handleVersion(request []byte) {
@@ -197,10 +270,14 @@ func handleConnection(conn net.Conn, bc *Blockchain) {
 	switch command {
 	case "addr":
 		handleAddr(request)
+	case "block":
+		handleBlock(request, bc)
 	case "inv":
-		handleInv(request)
+		handleInv(request, bc)
 	case "getblocks":
 		handleGetBlocks(request, bc)
+	case "getdata":
+		handleGetData(request, bc)
 	case "version":
 		handleVersion(request)
 	case "verack":
