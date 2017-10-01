@@ -126,7 +126,7 @@ func handleVersion(request []byte) {
 	knownNodes = append(knownNodes, payload.AddrFrom)
 }
 
-func handleConnection(conn net.Conn) {
+func handleConnection(conn net.Conn, bc *Blockchain) {
 	request, err := ioutil.ReadAll(conn)
 	if err != nil {
 		log.Panic(err)
@@ -161,12 +161,14 @@ func StartServer(nodeID string) {
 		sendVersion(fmt.Sprintf("localhost:%s", dnsNodeID))
 	}
 
+	bc := NewBlockchain(nodeID)
+
 	for {
 		conn, err := ln.Accept()
 		if err != nil {
 			log.Panic(err)
 		}
-		go handleConnection(conn)
+		go handleConnection(conn, bc)
 	}
 }
 
