@@ -16,13 +16,19 @@ const nodeVersion = 1
 const commandLength = 12
 
 var nodeAddress string
+var knownNodes []string
 
-type verzion struct {
-	Version  int
-	AddrFrom string
+type addr struct {
+	AddrList []string
 }
 
 type verack struct {
+}
+
+type verzion struct {
+	Version int
+
+	AddrFrom string
 }
 
 func commandToBytes(command string) []byte {
@@ -51,6 +57,15 @@ func extractCommand(request []byte) []byte {
 	return request[:commandLength]
 }
 
+func sendAddr(address string) {
+	nodes := addr{knownNodes}
+	nodes.AddrList = append(nodes.AddrList, nodeAddress)
+	payload := gobEncode(nodes)
+	request := append(commandToBytes("addr"), payload...)
+
+	sendData(address, request)
+}
+
 func sendData(addr string, data []byte) {
 	conn, err := net.Dial(protocol, addr)
 	if err != nil {
@@ -58,7 +73,6 @@ func sendData(addr string, data []byte) {
 	}
 	defer conn.Close()
 
-	fmt.Printf("%x\n", data)
 	_, err = io.Copy(conn, bytes.NewReader(data))
 	if err != nil {
 		log.Panic(err)
@@ -81,6 +95,21 @@ func sendVrack(addr string) {
 	sendData(addr, request)
 }
 
+func handleAddr(request []byte) {
+	var buff bytes.Buffer
+	var payload addr
+
+	buff.Write(request[commandLength:])
+	dec := gob.NewDecoder(&buff)
+	err := dec.Decode(&payload)
+	if err != nil {
+		log.Panic(err)
+	}
+
+	knownNodes = append(knownNodes, payload.AddrList...)
+	fmt.Printf("There are %d known nodes now!\n", len(knownNodes))
+}
+
 func handleVersion(request []byte) {
 	var buff bytes.Buffer
 	var payload verzion
@@ -93,6 +122,8 @@ func handleVersion(request []byte) {
 	}
 
 	sendVrack(payload.AddrFrom)
+	sendAddr(payload.AddrFrom)
+	knownNodes = append(knownNodes, payload.AddrFrom)
 }
 
 func handleConnection(conn net.Conn) {
@@ -101,15 +132,17 @@ func handleConnection(conn net.Conn) {
 		log.Panic(err)
 	}
 	command := bytesToCommand(request[:commandLength])
+	fmt.Printf("Received %s command\n", command)
 
 	switch command {
+	case "addr":
+		handleAddr(request)
 	case "version":
-		fmt.Printf("Received %s command\n", command)
 		handleVersion(request)
 	case "verack":
-		fmt.Printf("Received %s command\n", command)
+		//
 	default:
-		fmt.Println("Unknown command received!")
+		fmt.Println("Unknown command!")
 	}
 
 	conn.Close()
