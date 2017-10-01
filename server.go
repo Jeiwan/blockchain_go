@@ -11,7 +11,7 @@ import (
 )
 
 const protocol = "tcp"
-const dnsNodeID = 3000
+const dnsNodeID = "3000"
 const nodeVersion = 1
 const commandLength = 12
 
@@ -149,8 +149,8 @@ func handleConnection(conn net.Conn) {
 }
 
 // StartServer starts a node
-func StartServer(nodeID int) {
-	nodeAddress = fmt.Sprintf("localhost:%d", nodeID)
+func StartServer(nodeID string) {
+	nodeAddress = fmt.Sprintf("localhost:%s", nodeID)
 	ln, err := net.Listen(protocol, nodeAddress)
 	if err != nil {
 		log.Panic(err)
@@ -158,7 +158,7 @@ func StartServer(nodeID int) {
 	defer ln.Close()
 
 	if nodeID != dnsNodeID {
-		sendVersion(fmt.Sprintf("localhost:%d", dnsNodeID))
+		sendVersion(fmt.Sprintf("localhost:%s", dnsNodeID))
 	}
 
 	for {

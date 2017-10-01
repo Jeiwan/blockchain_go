@@ -2,7 +2,7 @@ package main
 
 import "fmt"
 
-func (cli *CLI) startNode(nodeID int) {
-	fmt.Printf("Starting node %d\n", nodeID)
+func (cli *CLI) startNode(nodeID string) {
+	fmt.Printf("Starting node %s\n", nodeID)
 	StartServer(nodeID)
 }

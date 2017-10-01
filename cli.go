@@ -19,7 +19,7 @@ func (cli *CLI) printUsage() {
 	fmt.Println("  printchain - Print all the blocks of the blockchain")
 	fmt.Println("  reindexutxo - Rebuilds the UTXO set")
 	fmt.Println("  send -from FROM -to TO -amount AMOUNT - Send AMOUNT of coins from FROM address to TO")
-	fmt.Println("  startnode -node-id NODE_ID - Start a node with specified ID")
+	fmt.Println("  startnode - Start a node with ID specified in NODE_ID env. var")
 }
 
 func (cli *CLI) validateArgs() {
@@ -47,7 +47,6 @@ func (cli *CLI) Run() {
 	sendFrom := sendCmd.String("from", "", "Source wallet address")
 	sendTo := sendCmd.String("to", "", "Destination wallet address")
 	sendAmount := sendCmd.Int("amount", 0, "Amount to send")
-	startNodeID := startNodeCmd.Int("node-id", 0, "Node ID")
 
 	switch os.Args[1] {
 	case "getbalance":
@@ -137,10 +136,11 @@ func (cli *CLI) Run() {
 	}
 
 	if startNodeCmd.Parsed() {
-		if *startNodeID == 0 {
+		nodeID := os.Getenv("NODE_ID")
+		if nodeID == "" {
 			startNodeCmd.Usage()
 			os.Exit(1)
 		}
-		cli.startNode(*startNodeID)
+		cli.startNode(nodeID)
 	}
 }
