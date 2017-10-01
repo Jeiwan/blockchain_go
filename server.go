@@ -22,6 +22,15 @@ type addr struct {
 	AddrList []string
 }
 
+type getblocks struct {
+	AddrFrom string
+}
+
+type inv struct {
+	Type  string
+	Items [][]byte
+}
+
 type verack struct {
 }
 
@@ -57,6 +66,12 @@ func extractCommand(request []byte) []byte {
 	return request[:commandLength]
 }
 
+func requestBlocks() {
+	for _, node := range knownNodes {
+		sendGetBlocks(node)
+	}
+}
+
 func sendAddr(address string) {
 	nodes := addr{knownNodes}
 	nodes.AddrList = append(nodes.AddrList, nodeAddress)
@@ -77,6 +92,21 @@ func sendData(addr string, data []byte) {
 	if err != nil {
 		log.Panic(err)
 	}
+}
+
+func sendInv(address, kind string, items [][]byte) {
+	inventory := inv{kind, items}
+	payload := gobEncode(inventory)
+	request := append(commandToBytes("inv"), payload...)
+
+	sendData(address, request)
+}
+
+func sendGetBlocks(address string) {
+	payload := gobEncode(getblocks{nodeAddress})
+	request := append(commandToBytes("getblocks"), payload...)
+
+	sendData(address, request)
 }
 
 func sendVersion(addr string) {
@@ -108,6 +138,36 @@ func handleAddr(request []byte) {
 
 	knownNodes = append(knownNodes, payload.AddrList...)
 	fmt.Printf("There are %d known nodes now!\n", len(knownNodes))
+	requestBlocks()
+}
+
+func handleInv(request []byte) {
+	var buff bytes.Buffer
+	var payload inv
+
+	buff.Write(request[commandLength:])
+	dec := gob.NewDecoder(&buff)
+	err := dec.Decode(&payload)
+	if err != nil {
+		log.Panic(err)
+	}
+
+	fmt.Printf("Recevied %d %s\n", len(payload.Items), payload.Type)
+}
+
+func handleGetBlocks(request []byte, bc *Blockchain) {
+	var buff bytes.Buffer
+	var payload getblocks
+
+	buff.Write(request[commandLength:])
+	dec := gob.NewDecoder(&buff)
+	err := dec.Decode(&payload)
+	if err != nil {
+		log.Panic(err)
+	}
+
+	blocks := bc.GetBlockHashes()
+	sendInv(payload.AddrFrom, "blocks", blocks)
 }
 
 func handleVersion(request []byte) {
@@ -137,6 +197,10 @@ func handleConnection(conn net.Conn, bc *Blockchain) {
 	switch command {
 	case "addr":
 		handleAddr(request)
+	case "inv":
+		handleInv(request)
+	case "getblocks":
+		handleGetBlocks(request, bc)
 	case "version":
 		handleVersion(request)
 	case "verack":
