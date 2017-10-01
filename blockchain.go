@@ -102,6 +102,24 @@ func (bc *Blockchain) Reset() {
 
 }
 
+// AddBlock saves the block into the blockchain
+func (bc *Blockchain) AddBlock(block *Block) {
+	err := bc.db.Update(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(blocksBucket))
+		blockInDb := b.Get(block.Hash)
+
+		if blockInDb != nil {
+			blockData := block.Serialize()
+			b.Put(block.Hash, blockData)
+		}
+
+		return nil
+	})
+	if err != nil {
+		log.Panic(err)
+	}
+}
+
 // FindTransaction finds a transaction by its ID
 func (bc *Blockchain) FindTransaction(ID []byte) (Transaction, error) {
 	bci := bc.Iterator()

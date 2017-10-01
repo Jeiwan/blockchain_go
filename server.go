@@ -183,7 +183,7 @@ func handleBlock(request []byte, bc *Blockchain) {
 	block := DeserializeBlock(blockData)
 
 	fmt.Println("Recevied a new block!")
-	fmt.Println(block)
+	bc.AddBlock(block)
 }
 
 func handleInv(request []byte, bc *Blockchain) {
@@ -201,8 +201,8 @@ func handleInv(request []byte, bc *Blockchain) {
 	blocks := bc.GetBlockHashes()
 
 	if len(blocks) < len(payload.Items) {
-		for _, blockHash := range invResponse.Items {
-			sendGetData(sourceNode, "block", blockHash)
+		for _, blockHash := range payload.Items {
+			sendGetData(payload.AddrFrom, "block", blockHash)
 		}
 	}
 }
