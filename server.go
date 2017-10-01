@@ -22,6 +22,9 @@ type verzion struct {
 	AddrFrom string
 }
 
+type verack struct {
+}
+
 func commandToBytes(command string) []byte {
 	var bytes [commandLength]byte
 
@@ -48,28 +51,48 @@ func extractCommand(request []byte) []byte {
 	return request[:commandLength]
 }
 
-func sendVersion(addr string) {
-	var payload bytes.Buffer
-
-	enc := gob.NewEncoder(&payload)
-	err := enc.Encode(verzion{nodeVersion, nodeAddress})
-	if err != nil {
-		log.Panic(err)
-	}
-
-	request := append(commandToBytes("version"), payload.Bytes()...)
-
+func sendData(addr string, data []byte) {
 	conn, err := net.Dial(protocol, addr)
 	if err != nil {
 		log.Panic(err)
 	}
 	defer conn.Close()
 
-	fmt.Printf("%x\n", request)
-	_, err = io.Copy(conn, bytes.NewReader(request))
+	fmt.Printf("%x\n", data)
+	_, err = io.Copy(conn, bytes.NewReader(data))
 	if err != nil {
 		log.Panic(err)
 	}
+}
+
+func sendVersion(addr string) {
+	payload := gobEncode(verzion{nodeVersion, nodeAddress})
+
+	request := append(commandToBytes("version"), payload...)
+
+	sendData(addr, request)
+}
+
+func sendVrack(addr string) {
+	payload := gobEncode(verack{})
+
+	request := append(commandToBytes("verack"), payload...)
+
+	sendData(addr, request)
+}
+
+func handleVersion(request []byte) {
+	var buff bytes.Buffer
+	var payload verzion
+
+	buff.Write(request[commandLength:])
+	dec := gob.NewDecoder(&buff)
+	err := dec.Decode(&payload)
+	if err != nil {
+		log.Panic(err)
+	}
+
+	sendVrack(payload.AddrFrom)
 }
 
 func handleConnection(conn net.Conn) {
@@ -81,9 +104,10 @@ func handleConnection(conn net.Conn) {
 
 	switch command {
 	case "version":
-		fmt.Printf("Received %s command", command)
-		// send verack
-		// send addr
+		fmt.Printf("Received %s command\n", command)
+		handleVersion(request)
+	case "verack":
+		fmt.Printf("Received %s command\n", command)
 	default:
 		fmt.Println("Unknown command received!")
 	}
@@ -111,4 +135,16 @@ func StartServer(nodeID int) {
 		}
 		go handleConnection(conn)
 	}
+}
+
+func gobEncode(data interface{}) []byte {
+	var buff bytes.Buffer
+
+	enc := gob.NewEncoder(&buff)
+	err := enc.Encode(data)
+	if err != nil {
+		log.Panic(err)
+	}
+
+	return buff.Bytes()
 }
