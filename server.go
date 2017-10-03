@@ -16,6 +16,7 @@ const nodeVersion = 1
 const commandLength = 12
 
 var nodeAddress string
+var miningAddress string
 var knownNodes = []string{"localhost:3000"}
 var blocksInTransit = [][]byte{}
 var mempool = make(map[string]Transaction)
@@ -189,6 +190,10 @@ func handleBlock(request []byte, bc *Blockchain) {
 
 	fmt.Println("Recevied a new block!")
 	bc.AddBlock(block)
+
+	// TODO: how to update UTXOSet when the order of new blocks is not correct?
+	// UTXOSet := UTXOSet{bc}
+	// UTXOSet.Update(block)
 	fmt.Printf("Added block %x\n", block.Hash)
 	fmt.Printf("Added block %d\n", block.Height)
 
@@ -199,9 +204,6 @@ func handleBlock(request []byte, bc *Blockchain) {
 
 		blocksInTransit = blocksInTransit[1:]
 	}
-
-	UTXOSet := UTXOSet{bc}
-	UTXOSet.Update(block)
 }
 
 func handleInv(request []byte, bc *Blockchain) {
@@ -302,22 +304,32 @@ func handleTx(request []byte, bc *Blockchain) {
 
 	if nodeAddress == knownNodes[0] {
 		for _, node := range knownNodes {
-			if node != nodeAddress {
+			if node != nodeAddress && node != payload.AddFrom {
 				sendInv(node, "tx", [][]byte{tx.ID})
 			}
 		}
 	} else {
-		if len(mempool) >= 2 {
+		if len(mempool) >= 2 && len(miningAddress) > 0 {
 			var txs []*Transaction
 
 			for _, tx := range mempool {
-				txs = append(txs, &tx)
+				// TODO: remove this check after improving MineBlock
+				if bc.VerifyTransaction(&tx) {
+					txs = append(txs, &tx)
+				}
 			}
+
+			cbTx := NewCoinbaseTX(miningAddress, "")
+			txs = append(txs, cbTx)
+
 			newBlock := bc.MineBlock(txs)
 			UTXOSet := UTXOSet{bc}
 			UTXOSet.Update(newBlock)
 
-			mempool = make(map[string]Transaction)
+			for _, tx := range txs {
+				txID := hex.EncodeToString(tx.ID)
+				delete(mempool, txID)
+			}
 		}
 	}
 }
@@ -379,8 +391,9 @@ func handleConnection(conn net.Conn, bc *Blockchain) {
 }
 
 // StartServer starts a node
-func StartServer(nodeID string) {
+func StartServer(nodeID, minerAddress string) {
 	nodeAddress = fmt.Sprintf("localhost:%s", nodeID)
+	miningAddress = minerAddress
 	ln, err := net.Listen(protocol, nodeAddress)
 	if err != nil {
 		log.Panic(err)
