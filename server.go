@@ -335,7 +335,7 @@ func handleVersion(request []byte, bc *Blockchain) {
 
 	if myBestHeight < foreignerBestHeight {
 		sendGetBlocks(payload.AddrFrom)
-	} else {
+	} else if myBestHeight > foreignerBestHeight {
 		sendVersion(payload.AddrFrom, bc)
 	}
 
