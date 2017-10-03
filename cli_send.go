@@ -25,9 +25,16 @@ func (cli *CLI) send(from, to string, amount int, nodeID string) {
 
 	tx := NewUTXOTransaction(&wallet, to, amount, &UTXOSet)
 	cbTx := NewCoinbaseTX(from, "")
-	txs := []*Transaction{cbTx, tx}
+	// txs := []*Transaction{cbTx, tx}
 
-	newBlock := bc.MineBlock(txs)
-	UTXOSet.Update(newBlock)
+	// var txHashes [][]byte
+	// txHashes = append(txHashes, tx.Hash())
+	// txHashes = append(txHashes, cbTx.Hash())
+
+	sendTx(knownNodes[0], tx)
+	sendTx(knownNodes[0], cbTx)
+
+	// newBlock := bc.MineBlock(txs)
+	// UTXOSet.Update(newBlock)
 	fmt.Println("Success!")
 }

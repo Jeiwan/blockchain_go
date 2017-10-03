@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"encoding/gob"
+	"encoding/hex"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -17,6 +18,7 @@ const commandLength = 12
 var nodeAddress string
 var knownNodes = []string{"localhost:3000"}
 var blocksInTransit = [][]byte{}
+var mempool = make(map[string]Transaction)
 
 type addr struct {
 	AddrList []string
@@ -41,6 +43,11 @@ type inv struct {
 	AddrFrom string
 	Type     string
 	Items    [][]byte
+}
+
+type tx struct {
+	AddFrom     string
+	Transaction []byte
 }
 
 type verzion struct {
@@ -133,6 +140,14 @@ func sendGetData(address, kind string, id []byte) {
 	sendData(address, request)
 }
 
+func sendTx(addr string, tnx *Transaction) {
+	data := tx{nodeAddress, tnx.Serialize()}
+	payload := gobEncode(data)
+	request := append(commandToBytes("tx"), payload...)
+
+	sendData(addr, request)
+}
+
 func sendVersion(addr string, bc *Blockchain) {
 	bestHeight := bc.GetBestHeight()
 	payload := gobEncode(verzion{nodeVersion, bestHeight, nodeAddress})
@@ -213,6 +228,14 @@ func handleInv(request []byte, bc *Blockchain) {
 		}
 		blocksInTransit = newInTransit
 	}
+
+	if payload.Type == "tx" {
+		txID := payload.Items[0]
+
+		if mempool[hex.EncodeToString(txID)].ID == nil {
+			sendGetData(payload.AddrFrom, "tx", txID)
+		}
+	}
 }
 
 func handleGetBlocks(request []byte, bc *Blockchain) {
@@ -248,6 +271,51 @@ func handleGetData(request []byte, bc *Blockchain) {
 		}
 
 		sendBlock(payload.AddrFrom, &block)
+	}
+
+	if payload.Type == "tx" {
+		txID := hex.EncodeToString(payload.ID)
+		tx := mempool[txID]
+
+		sendTx(payload.AddrFrom, &tx)
+		// delete(mempool, txID)
+	}
+}
+
+func handleTx(request []byte, bc *Blockchain) {
+	var buff bytes.Buffer
+	var payload tx
+
+	buff.Write(request[commandLength:])
+	dec := gob.NewDecoder(&buff)
+	err := dec.Decode(&payload)
+	if err != nil {
+		log.Panic(err)
+	}
+
+	txData := payload.Transaction
+	tx := DeserializeTransaction(txData)
+	mempool[hex.EncodeToString(tx.ID)] = tx
+
+	if nodeAddress == knownNodes[0] {
+		for _, node := range knownNodes {
+			if node != nodeAddress {
+				sendInv(node, "tx", [][]byte{tx.ID})
+			}
+		}
+	} else {
+		if len(mempool) >= 2 {
+			var txs []*Transaction
+
+			for _, tx := range mempool {
+				txs = append(txs, &tx)
+			}
+			newBlock := bc.MineBlock(txs)
+			UTXOSet := UTXOSet{bc}
+			UTXOSet.Update(newBlock)
+
+			mempool = make(map[string]Transaction)
+		}
 	}
 }
 
@@ -296,6 +364,8 @@ func handleConnection(conn net.Conn, bc *Blockchain) {
 		handleGetBlocks(request, bc)
 	case "getdata":
 		handleGetData(request, bc)
+	case "tx":
+		handleTx(request, bc)
 	case "version":
 		handleVersion(request, bc)
 	default:
