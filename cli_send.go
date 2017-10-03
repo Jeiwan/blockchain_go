@@ -5,7 +5,7 @@ import (
 	"log"
 )
 
-func (cli *CLI) send(from, to string, amount int, nodeID string) {
+func (cli *CLI) send(from, to string, amount int, nodeID string, mineNow bool) {
 	if !ValidateAddress(from) {
 		log.Panic("ERROR: Sender address is not valid")
 	}
@@ -25,16 +25,16 @@ func (cli *CLI) send(from, to string, amount int, nodeID string) {
 
 	tx := NewUTXOTransaction(&wallet, to, amount, &UTXOSet)
 	cbTx := NewCoinbaseTX(from, "")
-	// txs := []*Transaction{cbTx, tx}
 
-	// var txHashes [][]byte
-	// txHashes = append(txHashes, tx.Hash())
-	// txHashes = append(txHashes, cbTx.Hash())
+	if mineNow {
+		txs := []*Transaction{cbTx, tx}
 
-	sendTx(knownNodes[0], tx)
-	sendTx(knownNodes[0], cbTx)
+		newBlock := bc.MineBlock(txs)
+		UTXOSet.Update(newBlock)
+	} else {
+		sendTx(knownNodes[0], tx)
+		sendTx(knownNodes[0], cbTx)
+	}
 
-	// newBlock := bc.MineBlock(txs)
-	// UTXOSet.Update(newBlock)
 	fmt.Println("Success!")
 }
