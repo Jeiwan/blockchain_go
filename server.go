@@ -199,6 +199,9 @@ func handleBlock(request []byte, bc *Blockchain) {
 
 		blocksInTransit = blocksInTransit[1:]
 	}
+
+	UTXOSet := UTXOSet{bc}
+	UTXOSet.Update(block)
 }
 
 func handleInv(request []byte, bc *Blockchain) {
