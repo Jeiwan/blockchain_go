@@ -109,7 +109,18 @@ func sendBlock(addr string, b *Block) {
 func sendData(addr string, data []byte) {
 	conn, err := net.Dial(protocol, addr)
 	if err != nil {
-		log.Panic(err)
+		fmt.Printf("%s is not available\n", addr)
+		var updatedNodes []string
+
+		for _, node := range knownNodes {
+			if node != addr {
+				updatedNodes = append(updatedNodes, node)
+			}
+		}
+
+		knownNodes = updatedNodes
+
+		return
 	}
 	defer conn.Close()
 
@@ -219,7 +230,7 @@ func handleInv(request []byte, bc *Blockchain) {
 
 	fmt.Printf("Recevied inventory with %d %s\n", len(payload.Items), payload.Type)
 
-	if payload.Type == "blocks" {
+	if payload.Type == "block" {
 		blocksInTransit = payload.Items
 
 		blockHash := payload.Items[0]
@@ -255,7 +266,7 @@ func handleGetBlocks(request []byte, bc *Blockchain) {
 	}
 
 	blocks := bc.GetBlockHashes()
-	sendInv(payload.AddrFrom, "blocks", blocks)
+	sendInv(payload.AddrFrom, "block", blocks)
 }
 
 func handleGetData(request []byte, bc *Blockchain) {
@@ -319,6 +330,11 @@ func handleTx(request []byte, bc *Blockchain) {
 				}
 			}
 
+			if len(txs) == 0 {
+				fmt.Println("All transactions are invalid! Waiting for new ones...")
+				return
+			}
+
 			cbTx := NewCoinbaseTX(miningAddress, "")
 			txs = append(txs, cbTx)
 
@@ -326,9 +342,17 @@ func handleTx(request []byte, bc *Blockchain) {
 			UTXOSet := UTXOSet{bc}
 			UTXOSet.Update(newBlock)
 
+			fmt.Println("New block is mined!")
+
 			for _, tx := range txs {
 				txID := hex.EncodeToString(tx.ID)
 				delete(mempool, txID)
+			}
+
+			for _, node := range knownNodes {
+				if node != nodeAddress {
+					sendInv(node, "block", [][]byte{newBlock.Hash})
+				}
 			}
 		}
 	}
