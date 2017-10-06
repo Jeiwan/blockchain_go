@@ -202,18 +202,16 @@ func handleBlock(request []byte, bc *Blockchain) {
 	fmt.Println("Recevied a new block!")
 	bc.AddBlock(block)
 
-	// TODO: how to update UTXOSet when the order of new blocks is not correct?
-	// UTXOSet := UTXOSet{bc}
-	// UTXOSet.Update(block)
 	fmt.Printf("Added block %x\n", block.Hash)
-	fmt.Printf("Added block %d\n", block.Height)
 
-	fmt.Println(blocksInTransit)
 	if len(blocksInTransit) > 0 {
 		blockHash := blocksInTransit[0]
 		sendGetData(payload.AddrFrom, "block", blockHash)
 
 		blocksInTransit = blocksInTransit[1:]
+	} else {
+		UTXOSet := UTXOSet{bc}
+		UTXOSet.Reindex()
 	}
 }
 
@@ -321,10 +319,11 @@ func handleTx(request []byte, bc *Blockchain) {
 		}
 	} else {
 		if len(mempool) >= 2 && len(miningAddress) > 0 {
+		MineTransactions:
 			var txs []*Transaction
 
-			for _, tx := range mempool {
-				// TODO: remove this check after improving MineBlock
+			for id := range mempool {
+				tx := mempool[id]
 				if bc.VerifyTransaction(&tx) {
 					txs = append(txs, &tx)
 				}
@@ -340,7 +339,7 @@ func handleTx(request []byte, bc *Blockchain) {
 
 			newBlock := bc.MineBlock(txs)
 			UTXOSet := UTXOSet{bc}
-			UTXOSet.Update(newBlock)
+			UTXOSet.Reindex()
 
 			fmt.Println("New block is mined!")
 
@@ -353,6 +352,10 @@ func handleTx(request []byte, bc *Blockchain) {
 				if node != nodeAddress {
 					sendInv(node, "block", [][]byte{newBlock.Hash})
 				}
+			}
+
+			if len(mempool) > 0 {
+				goto MineTransactions
 			}
 		}
 	}

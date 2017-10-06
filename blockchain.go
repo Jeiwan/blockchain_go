@@ -97,11 +97,6 @@ func NewBlockchain(nodeID string) *Blockchain {
 	return &bc
 }
 
-// Reset removes all blockchain data
-func (bc *Blockchain) Reset() {
-
-}
-
 // AddBlock saves the block into the blockchain
 func (bc *Blockchain) AddBlock(block *Block) {
 	err := bc.db.Update(func(tx *bolt.Tx) error {
@@ -127,6 +122,7 @@ func (bc *Blockchain) AddBlock(block *Block) {
 			if err != nil {
 				log.Panic(err)
 			}
+			bc.tip = block.Hash
 		}
 
 		return nil
