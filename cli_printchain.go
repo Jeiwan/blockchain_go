@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"strconv"
+	"time"
 )
 
 func (cli *CLI) printChain(nodeID string) {
@@ -17,6 +18,7 @@ func (cli *CLI) printChain(nodeID string) {
 		fmt.Printf("============ Block %x ============\n", block.Hash)
 		fmt.Printf("Height: %d\n", block.Height)
 		fmt.Printf("Prev. block: %x\n", block.PrevBlockHash)
+		fmt.Printf("Created at : %s\n", time.Unix(block.Timestamp, 0))
 		pow := NewProofOfWork(block)
 		fmt.Printf("PoW: %s\n\n", strconv.FormatBool(pow.Validate()))
 		for _, tx := range block.Transactions {
