@@ -383,6 +383,7 @@ func handleVersion(request []byte, bc *Blockchain) {
 
 	// sendAddr(payload.AddrFrom)
 	if !nodeIsKnown(payload.AddrFrom) {
+		fmt.Printf("A new node %s is connected\n", payload.AddrFrom)
 		knownNodes = append(knownNodes, payload.AddrFrom)
 	}
 }
