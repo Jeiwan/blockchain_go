@@ -27,6 +27,11 @@ func (cli *CLI) getAddress(pubKey string) {
 	fmt.Printf("Address    : %s\n", address)
 }
 
+func (cli *CLI) getPubKeyHash(address string) {
+	pubKeyHash := Base58Decode([]byte(address))
+	fmt.Printf("%x\n", pubKeyHash[1:len(pubKeyHash)-4])
+}
+
 func (cli *CLI) validateAddr(address string) {
 	fmt.Printf("Address: %s\n", address)
 	if !ValidateAddress(address) {

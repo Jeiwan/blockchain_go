@@ -25,6 +25,7 @@ func (cli *CLI) printUsage() {
 	fmt.Println("Exploring cmds:")
 	fmt.Println("  generateKey - generate KeyPair for exploring")
 	fmt.Println("  getAddress -pubKey PUBKEY - convert pubKey to address")
+	fmt.Println("  getPubKeyHash -address Address - get pubKeyHash of an address")
 	fmt.Println("  validateAddress -addr Address - validate an address")
 }
 
@@ -55,6 +56,7 @@ func (cli *CLI) Run() {
 	startNodeCmd := flag.NewFlagSet("startnode", flag.ExitOnError)
 	generateKeyCmd := flag.NewFlagSet("generateKey", flag.ExitOnError)
 	getAddressCmd := flag.NewFlagSet("getAddress", flag.ExitOnError)
+	getPubKeyHashCmd := flag.NewFlagSet("getPubKeyHash", flag.ExitOnError)
 	validateAddrCmd := flag.NewFlagSet("validateAddress", flag.ExitOnError)
 
 	getBalanceAddress := getBalanceCmd.String("address", "", "The address to get balance for")
@@ -65,6 +67,7 @@ func (cli *CLI) Run() {
 	sendMine := sendCmd.Bool("mine", false, "Mine immediately on the same node")
 	startNodeMiner := startNodeCmd.String("miner", "", "Enable mining mode and send reward to ADDRESS")
 	pubKey := getAddressCmd.String("pubKey", "", "the key where address generated")
+	pubKeyAddress := getPubKeyHashCmd.String("address", "", "the pub address")
 	address := validateAddrCmd.String("addr", "", "the public address")
 
 	switch os.Args[1] {
@@ -115,6 +118,11 @@ func (cli *CLI) Run() {
 		}
 	case "generateKey":
 		err := generateKeyCmd.Parse(os.Args[2:])
+		if err != nil {
+			log.Panic(err)
+		}
+	case "getPubKeyHash":
+		err := getPubKeyHashCmd.Parse(os.Args[2:])
 		if err != nil {
 			log.Panic(err)
 		}
@@ -189,6 +197,15 @@ func (cli *CLI) Run() {
 		}
 
 		cli.getAddress(*pubKey)
+	}
+
+	if getPubKeyHashCmd.Parsed() {
+		if *pubKeyAddress == "" {
+			getPubKeyHashCmd.Usage()
+			os.Exit(1)
+		}
+
+		cli.getPubKeyHash(*pubKeyAddress)
 	}
 
 	if validateAddrCmd.Parsed() {
