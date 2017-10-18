@@ -22,7 +22,9 @@ func (cli *CLI) getAddress(pubKey string) {
 	fullPayload := append(versionedPayload, checksum...)
 	address := Base58Encode(fullPayload)
 	fmt.Println()
-	fmt.Printf("PubKey : %s\nAddress: %s\n", pubKey, address)
+	fmt.Printf("PubKey     : %s\n", pubKey)
+	fmt.Printf("PubKeyHash : %x\n", pubKeyHash)
+	fmt.Printf("Address    : %s\n", address)
 }
 
 func (cli *CLI) validateAddr(address string) {
