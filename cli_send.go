@@ -22,8 +22,12 @@ func (cli *CLI) send(from, to string, amount int, nodeID string, mineNow bool) {
 		log.Panic(err)
 	}
 	wallet := wallets.GetWallet(from)
+	if wallet == nil {
+		fmt.Println("The Address doesn't belongs to you!")
+		return
+	}
 
-	tx := NewUTXOTransaction(&wallet, to, amount, &UTXOSet)
+	tx := NewUTXOTransaction(wallet, to, amount, &UTXOSet)
 
 	if mineNow {
 		cbTx := NewCoinbaseTX(from, "")
