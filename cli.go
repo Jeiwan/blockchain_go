@@ -27,6 +27,7 @@ func (cli *CLI) printUsage() {
 	fmt.Println("  getAddress -pubKey PUBKEY - convert pubKey to address")
 	fmt.Println("  getPubKeyHash -address Address - get pubKeyHash of an address")
 	fmt.Println("  validateAddress -addr Address - validate an address")
+	fmt.Println("  getBlock -hash BlockHash - get a block with BlockHash")
 }
 
 func (cli *CLI) validateArgs() {
@@ -58,6 +59,7 @@ func (cli *CLI) Run() {
 	getAddressCmd := flag.NewFlagSet("getAddress", flag.ExitOnError)
 	getPubKeyHashCmd := flag.NewFlagSet("getPubKeyHash", flag.ExitOnError)
 	validateAddrCmd := flag.NewFlagSet("validateAddress", flag.ExitOnError)
+	getBlockCmd := flag.NewFlagSet("getBlock", flag.ExitOnError)
 
 	getBalanceAddress := getBalanceCmd.String("address", "", "The address to get balance for")
 	createBlockchainAddress := createBlockchainCmd.String("address", "", "The address to send genesis block reward to")
@@ -69,6 +71,7 @@ func (cli *CLI) Run() {
 	pubKey := getAddressCmd.String("pubKey", "", "the key where address generated")
 	pubKeyAddress := getPubKeyHashCmd.String("address", "", "the pub address")
 	address := validateAddrCmd.String("addr", "", "the public address")
+	blockHash := getBlockCmd.String("hash", "", "the block hash")
 
 	switch os.Args[1] {
 	case "getbalance":
@@ -128,6 +131,11 @@ func (cli *CLI) Run() {
 		}
 	case "getAddress":
 		err := getAddressCmd.Parse(os.Args[2:])
+		if err != nil {
+			log.Panic(err)
+		}
+	case "getBlock":
+		err := getBlockCmd.Parse(os.Args[2:])
 		if err != nil {
 			log.Panic(err)
 		}
@@ -215,6 +223,15 @@ func (cli *CLI) Run() {
 		}
 
 		cli.validateAddr(*address)
+	}
+
+	if getBlockCmd.Parsed() {
+		if *blockHash == "" {
+			getBlockCmd.Usage()
+			os.Exit(1)
+		}
+
+		cli.printBlock(*blockHash, nodeID)
 	}
 
 }
