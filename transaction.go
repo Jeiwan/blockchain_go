@@ -105,6 +105,7 @@ func (tx Transaction) String() string {
 		lines = append(lines, fmt.Sprintf("     Output %d:", i))
 		lines = append(lines, fmt.Sprintf("       Value:  %d", output.Value))
 		lines = append(lines, fmt.Sprintf("       Script: %x", output.PubKeyHash))
+		lines = append(lines, fmt.Sprintf("       Addr  : %s", output.Address))
 	}
 
 	return strings.Join(lines, "\n")
@@ -120,7 +121,7 @@ func (tx *Transaction) TrimmedCopy() Transaction {
 	}
 
 	for _, vout := range tx.Vout {
-		outputs = append(outputs, TXOutput{vout.Value, vout.PubKeyHash})
+		outputs = append(outputs, TXOutput{vout.Value, vout.PubKeyHash, vout.Address})
 	}
 
 	txCopy := Transaction{tx.ID, inputs, outputs}
