@@ -94,11 +94,16 @@ func (tx Transaction) String() string {
 
 	for i, input := range tx.Vin {
 
+		pubKeyHash := HashPubKey(input.PubKey)
+		versionedPayload := append([]byte{version}, pubKeyHash...)
+		fullPayload := append(versionedPayload, checksum(versionedPayload)...)
+
 		lines = append(lines, fmt.Sprintf("     Input %d:", i))
 		lines = append(lines, fmt.Sprintf("       TXID:      %x", input.Txid))
 		lines = append(lines, fmt.Sprintf("       Out:       %d", input.Vout))
 		lines = append(lines, fmt.Sprintf("       Signature: %x", input.Signature))
 		lines = append(lines, fmt.Sprintf("       PubKey:    %x", input.PubKey))
+		lines = append(lines, fmt.Sprintf("       Addr  :    %s", Base58Encode(fullPayload)))
 	}
 
 	for i, output := range tx.Vout {

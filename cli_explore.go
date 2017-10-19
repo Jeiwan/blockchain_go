@@ -17,14 +17,12 @@ func (cli *CLI) getAddress(pubKey string) {
 	pubKeyHash := HashPubKey(public)
 
 	versionedPayload := append([]byte{version}, pubKeyHash...)
-	checksum := checksum(versionedPayload)
+	fullPayload := append(versionedPayload, checksum(versionedPayload)...)
 
-	fullPayload := append(versionedPayload, checksum...)
-	address := Base58Encode(fullPayload)
 	fmt.Println()
 	fmt.Printf("PubKey     : %s\n", pubKey)
 	fmt.Printf("PubKeyHash : %x\n", pubKeyHash)
-	fmt.Printf("Address    : %s\n", address)
+	fmt.Printf("Address    : %s\n", Base58Encode(fullPayload))
 }
 
 func (cli *CLI) getPubKeyHash(address string) {
