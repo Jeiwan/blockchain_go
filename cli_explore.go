@@ -7,12 +7,10 @@ import (
 
 func (cli *CLI) generateKey() {
 	private, public := newKeyPair()
+	fmt.Println("Private Key:")
+	fmt.Println(hex.EncodeToString(private.D.Bytes()))
 	fmt.Println("Public Key:")
 	fmt.Println(hex.EncodeToString(public))
-	priKey := append(private.PublicKey.X.Bytes(), private.PublicKey.Y.Bytes()...)
-	priKey = append(priKey, private.D.Bytes()...)
-	fmt.Println("Private Key:")
-	fmt.Printf("%d%s\n", private.Curve, hex.EncodeToString(priKey))
 }
 
 func (cli *CLI) getAddress(pubKey string) {
