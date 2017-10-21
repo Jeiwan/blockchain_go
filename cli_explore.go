@@ -1,16 +1,22 @@
 package main
 
 import (
+	"crypto/elliptic"
 	"encoding/hex"
 	"fmt"
 )
 
-func (cli *CLI) generateKey() {
-	private, public := newKeyPair()
-	fmt.Println("Private Key:")
+func (cli *CLI) getPubKey(privateKey string) {
+	curve := elliptic.P256()
+	priv_key, _ := hex.DecodeString(privateKey)
+	x, y := curve.ScalarBaseMult(priv_key)
+	pubKey := append(x.Bytes(), y.Bytes()...)
+	fmt.Println(hex.EncodeToString(pubKey))
+}
+
+func (cli *CLI) generatePrivKey() {
+	private, _ := newKeyPair()
 	fmt.Println(hex.EncodeToString(private.D.Bytes()))
-	fmt.Println("Public Key:")
-	fmt.Println(hex.EncodeToString(public))
 }
 
 func (cli *CLI) getAddress(pubKey string) {
