@@ -376,3 +376,16 @@ func (bc *Blockchain) PrintHTML() string {
 	return strings.Join(lines, "\n")
 
 }
+
+func (bc *Blockchain) GetBalance(address string) int {
+	UTXOSet := UTXOSet{bc}
+	balance := 0
+	pubKeyHash := Base58Decode([]byte(address))
+	pubKeyHash = pubKeyHash[1 : len(pubKeyHash)-4]
+	UTXOs := UTXOSet.FindUTXO(pubKeyHash)
+
+	for _, out := range UTXOs {
+		balance += out.Value
+	}
+	return balance
+}
