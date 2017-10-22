@@ -11,7 +11,7 @@ func (cli *CLI) getBalance(address, nodeID string) {
 	}
 	bc := NewBlockchain(nodeID)
 	UTXOSet := UTXOSet{bc}
-	defer bc.db.Close()
+	defer bc.DB.Close()
 
 	balance := 0
 	pubKeyHash := Base58Decode([]byte(address))
