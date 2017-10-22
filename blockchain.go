@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 
 	"github.com/boltdb/bolt"
 )
@@ -357,4 +358,21 @@ func dbExists(dbFile string) bool {
 	}
 
 	return true
+}
+
+func (bc *Blockchain) PrintHTML() string {
+	var lines []string
+	bci := bc.Iterator()
+
+	for {
+		block := bci.Next()
+
+		lines = append(lines, block.PrintHTML(false))
+
+		if len(block.PrevBlockHash) == 0 {
+			break
+		}
+	}
+	return strings.Join(lines, "\n")
+
 }
