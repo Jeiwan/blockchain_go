@@ -17,6 +17,9 @@ A blockchain implementation in Go, as described in these articles:
     go get github.com/richardweiyang/blockchain_go
 
 ## Create file `main.go`
+
+source code
+
 ```go
 package main
 
