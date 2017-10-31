@@ -1,4 +1,4 @@
-package main
+package bc
 
 import (
 	"bytes"
@@ -94,17 +94,23 @@ func (tx Transaction) String() string {
 
 	for i, input := range tx.Vin {
 
+		pubKeyHash := HashPubKey(input.PubKey)
+		versionedPayload := append([]byte{version}, pubKeyHash...)
+		fullPayload := append(versionedPayload, checksum(versionedPayload)...)
+
 		lines = append(lines, fmt.Sprintf("     Input %d:", i))
 		lines = append(lines, fmt.Sprintf("       TXID:      %x", input.Txid))
 		lines = append(lines, fmt.Sprintf("       Out:       %d", input.Vout))
 		lines = append(lines, fmt.Sprintf("       Signature: %x", input.Signature))
 		lines = append(lines, fmt.Sprintf("       PubKey:    %x", input.PubKey))
+		lines = append(lines, fmt.Sprintf("       Addr  :    %s", Base58Encode(fullPayload)))
 	}
 
 	for i, output := range tx.Vout {
 		lines = append(lines, fmt.Sprintf("     Output %d:", i))
 		lines = append(lines, fmt.Sprintf("       Value:  %d", output.Value))
 		lines = append(lines, fmt.Sprintf("       Script: %x", output.PubKeyHash))
+		lines = append(lines, fmt.Sprintf("       Addr  : %s", output.Address))
 	}
 
 	return strings.Join(lines, "\n")
@@ -120,7 +126,7 @@ func (tx *Transaction) TrimmedCopy() Transaction {
 	}
 
 	for _, vout := range tx.Vout {
-		outputs = append(outputs, TXOutput{vout.Value, vout.PubKeyHash})
+		outputs = append(outputs, TXOutput{vout.Value, vout.PubKeyHash, vout.Address})
 	}
 
 	txCopy := Transaction{tx.ID, inputs, outputs}
@@ -242,4 +248,33 @@ func DeserializeTransaction(data []byte) Transaction {
 	}
 
 	return transaction
+}
+
+func (tx Transaction) PrintHTML() string {
+	var lines []string
+
+	lines = append(lines, fmt.Sprintf("<h4> Transaction %x:</h4>", tx.ID))
+
+	for i, input := range tx.Vin {
+
+		pubKeyHash := HashPubKey(input.PubKey)
+		versionedPayload := append([]byte{version}, pubKeyHash...)
+		fullPayload := append(versionedPayload, checksum(versionedPayload)...)
+
+		lines = append(lines, fmt.Sprintf("<div>Input %d:</div>", i))
+		lines = append(lines, fmt.Sprintf("<div style=\"text-indent:2em;\">TXID:      %x</div>", input.Txid))
+		lines = append(lines, fmt.Sprintf("<div style=\"text-indent:2em;\">Out:       %d</div>", input.Vout))
+		lines = append(lines, fmt.Sprintf("<div style=\"text-indent:2em;\">Signature: %x</div>", input.Signature))
+		lines = append(lines, fmt.Sprintf("<div style=\"text-indent:2em;\">PubKey:    %x</div>", input.PubKey))
+		lines = append(lines, fmt.Sprintf("<div style=\"text-indent:2em;\">Addr  :    %s</div>", Base58Encode(fullPayload)))
+	}
+
+	for i, output := range tx.Vout {
+		lines = append(lines, fmt.Sprintf("<div>Output %d:</div>", i))
+		lines = append(lines, fmt.Sprintf("<div style=\"text-indent:2em;\">Value:  %d</div>", output.Value))
+		lines = append(lines, fmt.Sprintf("<div style=\"text-indent:2em;\">Script: %x</div>", output.PubKeyHash))
+		lines = append(lines, fmt.Sprintf("<div style=\"text-indent:2em;\">Addr  : %s</div>", output.Address))
+	}
+
+	return strings.Join(lines, "")
 }

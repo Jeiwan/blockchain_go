@@ -1,4 +1,4 @@
-package main
+package bc
 
 import (
 	"fmt"
@@ -15,15 +15,19 @@ func (cli *CLI) send(from, to string, amount int, nodeID string, mineNow bool) {
 
 	bc := NewBlockchain(nodeID)
 	UTXOSet := UTXOSet{bc}
-	defer bc.db.Close()
+	defer bc.DB.Close()
 
 	wallets, err := NewWallets(nodeID)
 	if err != nil {
 		log.Panic(err)
 	}
 	wallet := wallets.GetWallet(from)
+	if wallet == nil {
+		fmt.Println("The Address doesn't belongs to you!")
+		return
+	}
 
-	tx := NewUTXOTransaction(&wallet, to, amount, &UTXOSet)
+	tx := NewUTXOTransaction(wallet, to, amount, &UTXOSet)
 
 	if mineNow {
 		cbTx := NewCoinbaseTX(from, "")

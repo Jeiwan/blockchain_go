@@ -1,4 +1,4 @@
-package main
+package bc
 
 import (
 	"bytes"
@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 
 	"github.com/boltdb/bolt"
 )
@@ -19,7 +20,7 @@ const genesisCoinbaseData = "The Times 03/Jan/2009 Chancellor on brink of second
 // Blockchain implements interactions with a DB
 type Blockchain struct {
 	tip []byte
-	db  *bolt.DB
+	DB  *bolt.DB
 }
 
 // CreateBlockchain creates a new blockchain DB
@@ -82,7 +83,7 @@ func NewBlockchain(nodeID string) *Blockchain {
 		log.Panic(err)
 	}
 
-	err = db.Update(func(tx *bolt.Tx) error {
+	err = db.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(blocksBucket))
 		tip = b.Get([]byte("l"))
 
@@ -99,7 +100,7 @@ func NewBlockchain(nodeID string) *Blockchain {
 
 // AddBlock saves the block into the blockchain
 func (bc *Blockchain) AddBlock(block *Block) {
-	err := bc.db.Update(func(tx *bolt.Tx) error {
+	err := bc.DB.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(blocksBucket))
 		blockInDb := b.Get(block.Hash)
 
@@ -199,7 +200,7 @@ func (bc *Blockchain) FindUTXO() map[string]TXOutputs {
 
 // Iterator returns a BlockchainIterat
 func (bc *Blockchain) Iterator() *BlockchainIterator {
-	bci := &BlockchainIterator{bc.tip, bc.db}
+	bci := &BlockchainIterator{bc.tip, bc.DB}
 
 	return bci
 }
@@ -208,7 +209,7 @@ func (bc *Blockchain) Iterator() *BlockchainIterator {
 func (bc *Blockchain) GetBestHeight() int {
 	var lastBlock Block
 
-	err := bc.db.View(func(tx *bolt.Tx) error {
+	err := bc.DB.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(blocksBucket))
 		lastHash := b.Get([]byte("l"))
 		blockData := b.Get(lastHash)
@@ -227,7 +228,7 @@ func (bc *Blockchain) GetBestHeight() int {
 func (bc *Blockchain) GetBlock(blockHash []byte) (Block, error) {
 	var block Block
 
-	err := bc.db.View(func(tx *bolt.Tx) error {
+	err := bc.DB.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(blocksBucket))
 
 		blockData := b.Get(blockHash)
@@ -277,7 +278,7 @@ func (bc *Blockchain) MineBlock(transactions []*Transaction) *Block {
 		}
 	}
 
-	err := bc.db.View(func(tx *bolt.Tx) error {
+	err := bc.DB.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(blocksBucket))
 		lastHash = b.Get([]byte("l"))
 
@@ -294,7 +295,7 @@ func (bc *Blockchain) MineBlock(transactions []*Transaction) *Block {
 
 	newBlock := NewBlock(transactions, lastHash, lastHeight+1)
 
-	err = bc.db.Update(func(tx *bolt.Tx) error {
+	err = bc.DB.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(blocksBucket))
 		err := b.Put(newBlock.Hash, newBlock.Serialize())
 		if err != nil {
@@ -357,4 +358,34 @@ func dbExists(dbFile string) bool {
 	}
 
 	return true
+}
+
+func (bc *Blockchain) PrintHTML() string {
+	var lines []string
+	bci := bc.Iterator()
+
+	for {
+		block := bci.Next()
+
+		lines = append(lines, block.PrintHTML(false))
+
+		if len(block.PrevBlockHash) == 0 {
+			break
+		}
+	}
+	return strings.Join(lines, "\n")
+
+}
+
+func (bc *Blockchain) GetBalance(address string) int {
+	UTXOSet := UTXOSet{bc}
+	balance := 0
+	pubKeyHash := Base58Decode([]byte(address))
+	pubKeyHash = pubKeyHash[1 : len(pubKeyHash)-4]
+	UTXOs := UTXOSet.FindUTXO(pubKeyHash)
+
+	for _, out := range UTXOs {
+		balance += out.Value
+	}
+	return balance
 }

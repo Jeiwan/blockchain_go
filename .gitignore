@@ -1,2 +1,5 @@
 *.db
 *.dat
+cscope.*
+.*.swp
+blockchain_go

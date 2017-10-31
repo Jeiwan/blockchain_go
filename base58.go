@@ -1,4 +1,4 @@
-package main
+package bc
 
 import (
 	"bytes"
@@ -40,8 +40,10 @@ func Base58Decode(input []byte) []byte {
 	zeroBytes := 0
 
 	for _, b := range input {
-		if b == 0x00 {
+		if b == b58Alphabet[0] {
 			zeroBytes++
+		} else {
+			break
 		}
 	}
 

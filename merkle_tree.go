@@ -1,4 +1,4 @@
-package main
+package bc
 
 import (
 	"crypto/sha256"
@@ -20,7 +20,8 @@ type MerkleNode struct {
 func NewMerkleTree(data [][]byte) *MerkleTree {
 	var nodes []MerkleNode
 
-	if len(data)%2 != 0 {
+	// append node until number is power of 2
+	for (len(data) & (len(data) - 1)) != 0 {
 		data = append(data, data[len(data)-1])
 	}
 
@@ -29,7 +30,8 @@ func NewMerkleTree(data [][]byte) *MerkleTree {
 		nodes = append(nodes, *node)
 	}
 
-	for i := 0; i < len(data)/2; i++ {
+	// up level until there is only 1 node
+	for len(nodes) > 1 {
 		var newLevel []MerkleNode
 
 		for j := 0; j < len(nodes); j += 2 {
