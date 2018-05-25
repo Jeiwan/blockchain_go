@@ -28,6 +28,10 @@ func (u UTXOSet) FindSpendableOutputs(pubkeyHash []byte, amount int) (int, map[s
 			txID := hex.EncodeToString(k)
 			outs := DeserializeOutputs(v)
 
+			if accumulated >= amount {
+				break
+			}
+
 			for outIdx, out := range outs.Outputs {
 				if out.IsLockedWithKey(pubkeyHash) && accumulated < amount {
 					accumulated += out.Value
