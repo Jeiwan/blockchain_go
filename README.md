@@ -9,3 +9,6 @@ A blockchain implementation in Go, as described in these articles:
 5. [Addresses](https://jeiwan.cc/posts/building-blockchain-in-go-part-5/)
 6. [Transactions 2](https://jeiwan.cc/posts/building-blockchain-in-go-part-6/)
 7. [Network](https://jeiwan.cc/posts/building-blockchain-in-go-part-7/)
+8. [Chinese video course for blockchain in Go](https://www.youtube.com/channel/UCRxmNhjCYQkGVbKSumcK5Wg/videos?view_as=subscriber)
+
+
