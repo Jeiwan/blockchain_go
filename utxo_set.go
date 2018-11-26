@@ -31,7 +31,7 @@ func (u UTXOSet) FindSpendableOutputs(pubkeyHash []byte, amount int) (int, map[s
 			for outIdx, out := range outs.Outputs {
 				if out.IsLockedWithKey(pubkeyHash) && accumulated < amount {
 					accumulated += out.Value
-					unspentOutputs[txID] = append(unspentOutputs[txID], outIdx)
+					unspentOutputs[txID] = append(unspentOutputs[txID], outs.OutIdxs[outIdx])
 				}
 			}
 		}
@@ -153,9 +153,16 @@ func (u UTXOSet) Update(block *Block) {
 					outsBytes := b.Get(vin.Txid)
 					outs := DeserializeOutputs(outsBytes)
 
-					for outIdx, out := range outs.Outputs {
+					//for outIdx, out := range outs.Outputs {
+					//	if outIdx != vin.Vout {
+					//		updatedOuts.Outputs = append(updatedOuts.Outputs, out)
+					//	}
+					//}
+
+					for idx, outIdx := range outs.OutIdxs {
 						if outIdx != vin.Vout {
-							updatedOuts.Outputs = append(updatedOuts.Outputs, out)
+							updatedOuts.Outputs = append(updatedOuts.Outputs, outs.Outputs[idx])
+							updatedOuts.OutIdxs = append(updatedOuts.OutIdxs, outIdx)
 						}
 					}
 
@@ -175,8 +182,9 @@ func (u UTXOSet) Update(block *Block) {
 			}
 
 			newOutputs := TXOutputs{}
-			for _, out := range tx.Vout {
+			for idx, out := range tx.Vout {
 				newOutputs.Outputs = append(newOutputs.Outputs, out)
+				newOutputs.OutIdxs = append(newOutputs.OutIdxs, idx)
 			}
 
 			err := b.Put(tx.ID, newOutputs.Serialize())

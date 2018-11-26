@@ -35,6 +35,7 @@ func NewTXOutput(value int, address string) *TXOutput {
 // TXOutputs collects TXOutput
 type TXOutputs struct {
 	Outputs []TXOutput
+	OutIdxs []int
 }
 
 // Serialize serializes TXOutputs
