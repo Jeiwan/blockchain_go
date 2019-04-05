@@ -145,8 +145,15 @@ func (tx *Transaction) Verify(prevTXs map[string]Transaction) bool {
 
 	for inID, vin := range tx.Vin {
 		prevTx := prevTXs[hex.EncodeToString(vin.Txid)]
+		refVoutPubKeyHash := prevTx.Vout[vin.Vout].PubKeyHash
+
+		// check that the spend coin is owned by vin.PubKey
+		if !bytes.Equal(HashPubKey(vin.PubKey), refVoutPubKeyHash) {
+			return false
+		}
+
 		txCopy.Vin[inID].Signature = nil
-		txCopy.Vin[inID].PubKey = prevTx.Vout[vin.Vout].PubKeyHash
+		txCopy.Vin[inID].PubKey = refVoutPubKeyHash
 
 		r := big.Int{}
 		s := big.Int{}
