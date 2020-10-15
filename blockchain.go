@@ -183,8 +183,8 @@ func dbExists() bool {
 	return true
 }
 
-// NewBlockchain creates a new Blockchain with genesis Block
-func NewBlockchain(address string) *Blockchain {
+// NewBlockchain creates an Blockchain instance
+func NewBlockchain() *Blockchain {
 	if dbExists() == false {
 		fmt.Println("No existing blockchain found. Create one first.")
 		os.Exit(1)
@@ -198,7 +198,7 @@ func NewBlockchain(address string) *Blockchain {
 
 	err = db.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(blocksBucket))
-		tip = b.Get([]byte("l"))
+		tip = b.Get([]byte("l"))//get the last block's hash
 
 		return nil
 	})
