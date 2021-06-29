@@ -178,6 +178,7 @@ func (bc *Blockchain) FindUTXO() map[string]TXOutputs {
 
 				outs := UTXO[txID]
 				outs.Outputs = append(outs.Outputs, out)
+				outs.OutIdxs = append(outs.OutIdxs,outIdx)
 				UTXO[txID] = outs
 			}
 
