@@ -18,7 +18,7 @@ func (cli *CLI) createBlockchain(address string) {
 }
 
 func (cli *CLI) getBalance(address string) {
-	bc := NewBlockchain(address)
+	bc := NewBlockchain()
 	defer bc.db.Close()
 
 	balance := 0
