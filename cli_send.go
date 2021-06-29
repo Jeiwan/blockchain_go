@@ -12,6 +12,11 @@ func (cli *CLI) send(from, to string, amount int, nodeID string, mineNow bool) {
 	if !ValidateAddress(to) {
 		log.Panic("ERROR: Recipient address is not valid")
 	}
+	if to == from {
+		log.Panic("ERROR: You cannot send coins to yourself")
+	} else if from == to {
+		log.Panic("ERROR: You cannot send coins to yourself")
+	}
 
 	bc := NewBlockchain(nodeID)
 	UTXOSet := UTXOSet{bc}
