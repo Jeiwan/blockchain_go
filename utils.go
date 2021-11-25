@@ -7,7 +7,7 @@ import (
 )
 
 // IntToHex converts an int64 to a byte array
-func IntToHex(num int64) []byte {
+func IntToBytes(num int64) []byte {
 	buff := new(bytes.Buffer)
 	err := binary.Write(buff, binary.BigEndian, num)
 	if err != nil {
