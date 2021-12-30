@@ -113,8 +113,7 @@ func (bc *Blockchain) AddBlock(block *Block) {
 			log.Panic(err)
 		}
 
-		lastHash := b.Get([]byte("l"))
-		lastBlockData := b.Get(lastHash)
+		lastBlockData := b.Get(bc.tip)
 		lastBlock := DeserializeBlock(lastBlockData)
 
 		if block.Height > lastBlock.Height {
@@ -197,7 +196,7 @@ func (bc *Blockchain) FindUTXO() map[string]TXOutputs {
 	return UTXO
 }
 
-// Iterator returns a BlockchainIterat
+// Iterator returns a BlockchainIterator
 func (bc *Blockchain) Iterator() *BlockchainIterator {
 	bci := &BlockchainIterator{bc.tip, bc.db}
 
@@ -210,8 +209,7 @@ func (bc *Blockchain) GetBestHeight() int {
 
 	err := bc.db.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(blocksBucket))
-		lastHash := b.Get([]byte("l"))
-		blockData := b.Get(lastHash)
+		blockData := b.Get(bc.tip)
 		lastBlock = *DeserializeBlock(blockData)
 
 		return nil
@@ -277,24 +275,10 @@ func (bc *Blockchain) MineBlock(transactions []*Transaction) *Block {
 		}
 	}
 
-	err := bc.db.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(blocksBucket))
-		lastHash = b.Get([]byte("l"))
-
-		blockData := b.Get(lastHash)
-		block := DeserializeBlock(blockData)
-
-		lastHeight = block.Height
-
-		return nil
-	})
-	if err != nil {
-		log.Panic(err)
-	}
-
+	lastHeight = bc.GetBestHeight()
 	newBlock := NewBlock(transactions, lastHash, lastHeight+1)
 
-	err = bc.db.Update(func(tx *bolt.Tx) error {
+	err := bc.db.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(blocksBucket))
 		err := b.Put(newBlock.Hash, newBlock.Serialize())
 		if err != nil {
