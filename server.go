@@ -318,7 +318,7 @@ func handleTx(request []byte, bc *Blockchain) {
 			}
 		}
 	} else {
-		if len(mempool) >= 2 && len(miningAddress) > 0 {
+		if len(mempool) >= 1 && len(miningAddress) > 0 {
 		MineTransactions:
 			var txs []*Transaction
 
