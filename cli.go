@@ -39,6 +39,7 @@ func (cli *CLI) Run() {
 		fmt.Printf("NODE_ID env. var is not set!")
 		os.Exit(1)
 	}
+	nodeAddress = fmt.Sprintf("localhost:%s", nodeID)
 
 	getBalanceCmd := flag.NewFlagSet("getbalance", flag.ExitOnError)
 	createBlockchainCmd := flag.NewFlagSet("createblockchain", flag.ExitOnError)
